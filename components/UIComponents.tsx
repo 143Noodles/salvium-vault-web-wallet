@@ -153,13 +153,9 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
     ? { top: 'calc(56px + env(safe-area-inset-top))', left: 0, right: 0, bottom: 0 }
     : { top: 0, left: 0, right: 0, bottom: 0 };
 
-  const contentStyle: React.CSSProperties = isMobileOrTablet
-    ? { height: '100%', marginBottom: 'env(safe-area-inset-bottom)' }
-    : { height: 'calc(100dvh - (56px + env(safe-area-inset-top) + env(safe-area-inset-bottom)))', marginBottom: 'env(safe-area-inset-bottom)' };
-
   return (
     <div
-      className="fixed z-[100] flex items-end md:items-center justify-center sm:p-4"
+      className={`fixed z-[100] flex justify-center ${isMobileOrTablet ? 'items-center p-4' : 'items-center p-4'}`}
       style={containerStyle}
     >
       {/* Backdrop */}
@@ -170,8 +166,8 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
       ></div>
 
       {/* Content */}
-      <div className={`relative w-full md:max-w-lg bg-[#131320] md:rounded-2xl rounded-t-2xl border-t md:border border-white/10 shadow-2xl flex flex-col md:h-auto animate-slide-up ${className}`}
-        style={contentStyle}
+      <div
+        className={`relative bg-[#131320] shadow-2xl flex flex-col animate-slide-up ${isMobileOrTablet ? 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[calc(100%-2rem)]' : 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[85vh]'} ${className}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 rounded-t-2xl">
@@ -185,7 +181,7 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar min-h-0">
           {children}
         </div>
       </div>

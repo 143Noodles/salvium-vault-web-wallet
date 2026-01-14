@@ -92,9 +92,9 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
    }, []);
 
    return (
-      <div className={`relative animate-fade-in gap-4 md:gap-6 ${isMobileOrTablet
-         ? 'flex flex-col h-full'
-         : 'overflow-hidden grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] h-[calc(100vh-7rem)] p-0'
+      <div className={`relative animate-fade-in ${isMobileOrTablet
+         ? 'flex flex-col h-full gap-4'
+         : 'overflow-hidden grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] h-[calc(100vh-7rem)] p-0 gap-6'
          }`}>
          {/* Force layout update v3 */}
          {/* Force layout update */}
@@ -104,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
             : 'col-span-8 flex-shrink h-full'
             }`}>
             <Card
-               className={`relative overflow-hidden group flex flex-col border-white/5 md:h-full ${isMobileOrTablet ? 'min-h-[11.25rem]' : 'min-h-[13.75rem]'}`}
+               className={`relative overflow-hidden group flex flex-col border-white/5 ${isMobileOrTablet ? 'min-h-[11.25rem]' : 'min-h-[13.75rem] md:h-full'}`}
                glow
                style={{ containerType: 'size' } as React.CSSProperties}
             >
@@ -298,7 +298,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
             ? ''
             : 'col-span-8 h-full'
             }`}>
-            <Card className="flex-1 flex flex-col bg-[#131320] border-white/5 h-full md:min-h-0" noPadding>
+            <Card className={`flex-1 flex flex-col bg-[#131320] border-white/5 ${isMobileOrTablet ? '' : 'h-full md:min-h-0'}`} noPadding>
                <div className="flex justify-between items-center mb-2 flex-shrink-0 px-5 pt-5">
                   <div className="flex items-center gap-4">
                      <div className="p-2 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-lg text-white">

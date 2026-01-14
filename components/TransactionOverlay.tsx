@@ -68,13 +68,13 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
         );
     }
 
-    // Mobile: Standard Overlay
+    // Mobile/Tablet: Standard Overlay
     return (
         <Overlay
             isOpen={isOpen}
             onClose={onClose}
             title="Transaction Details"
-            className="md:max-w-5xl md:h-[85vh]"
+            className="max-w-5xl h-[85vh]"
         >
             <Content />
         </Overlay>
