@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+    html,
+    body,
+    #root {
+        overflow: hidden;
+        /* CRITICAL: Prevent window scrollbar */
+        height: 100%;
+        /* CRITICAL: Ensure full height */
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Hide number input spinners (Chrome/Safari/Edge/Opera) */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+}
