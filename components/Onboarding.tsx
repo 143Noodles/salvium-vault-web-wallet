@@ -302,15 +302,28 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   <span className="ml-3 text-text-muted">Generating secure seed phrase...</span>
                 </div>
               ) : generatedSeed ? (
-                <div className="grid grid-cols-5 gap-2">
-                  {generatedSeed.split(' ').map((word, i) => (
-                    <div key={i} className="bg-black/40 border border-white/10 rounded-lg p-2 flex flex-col items-center relative overflow-hidden group/word hover:border-accent-primary/50 transition-colors">
-                      <span className="text-text-muted/50 text-[9px] font-mono select-none mb-0.5">{(i + 1)}</span>
-                      <span className="text-white font-mono font-bold tracking-wide text-xs">{word}</span>
-                      <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover/word:opacity-100 transition-opacity pointer-events-none"></div>
+                isMobile ? (
+                  <div className="bg-black/40 border border-white/10 rounded-xl p-4">
+                    <div className="flex flex-wrap gap-x-3 gap-y-2 justify-center">
+                      {generatedSeed.split(' ').map((word, i) => (
+                        <span key={i} className="text-white font-mono text-sm">
+                          <span className="text-text-muted/50 text-xs mr-1">{i + 1}.</span>
+                          <span className="font-bold">{word}</span>
+                        </span>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-2">
+                    {generatedSeed.split(' ').map((word, i) => (
+                      <div key={i} className="bg-black/40 border border-white/10 rounded-lg p-2 flex flex-col items-center relative overflow-hidden group/word hover:border-accent-primary/50 transition-colors">
+                        <span className="text-text-muted/50 text-[9px] font-mono select-none mb-0.5">{(i + 1)}</span>
+                        <span className="text-white font-mono font-bold tracking-wide text-xs">{word}</span>
+                        <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover/word:opacity-100 transition-opacity pointer-events-none"></div>
+                      </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="text-center py-8">
                   <p className="text-red-400">{error || 'Failed to generate seed'}</p>
