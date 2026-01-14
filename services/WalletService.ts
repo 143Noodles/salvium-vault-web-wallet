@@ -740,18 +740,12 @@ export class WalletService {
           const height = tx.block_height || tx.height || 0;
           // Use WASM timestamp if valid, otherwise estimate from block height
           const timestamp = tx.timestamp > 0 ? tx.timestamp * 1000 : this.estimateTimestampFromHeight(height);
-          // For outgoing transactions, use the sum of destination amounts (excludes change back to self)
-          // tx.amount includes change, so prefer destinations if available
-          let outAmount = tx.amount || 0;
-          if (tx.destinations && tx.destinations.length > 0) {
-            outAmount = tx.destinations.reduce((sum: number, dest: any) => sum + (dest.amount || 0), 0);
-          }
           transactions.push({
             txid: tx.txid,
             type: 'out',
             tx_type: txType,
             tx_type_label: this.getTxTypeLabel(txType, 'out'),
-            amount: outAmount / ATOMIC_UNITS,
+            amount: (tx.amount || 0) / ATOMIC_UNITS,
             fee: tx.fee ? tx.fee / ATOMIC_UNITS : undefined,
             timestamp,
             height,
@@ -769,17 +763,12 @@ export class WalletService {
           const txType = tx.tx_type;
           // Pending transactions use current time if no timestamp
           const timestamp = tx.timestamp > 0 ? tx.timestamp * 1000 : Date.now();
-          // For pending (outgoing) transactions, use destination amounts (excludes change back to self)
-          let pendingAmount = tx.amount || 0;
-          if (tx.destinations && tx.destinations.length > 0) {
-            pendingAmount = tx.destinations.reduce((sum: number, dest: any) => sum + (dest.amount || 0), 0);
-          }
           transactions.push({
             txid: tx.txid,
             type: 'pending',
             tx_type: txType,
             tx_type_label: this.getTxTypeLabel(txType, 'pending'),
-            amount: pendingAmount / ATOMIC_UNITS,
+            amount: (tx.amount || 0) / ATOMIC_UNITS,
             fee: tx.fee ? tx.fee / ATOMIC_UNITS : undefined,
             timestamp,
             height: 0,
@@ -1036,15 +1025,56 @@ export class WalletService {
    * Stake SAL/SAL1 for yield rewards
    * Stakes are locked for ~30 days (21600 blocks) and return principal + yield
    * Uses same two-phase process as sendTransaction for decoy output fetching
+   * @param sweepAll If true, will auto-reduce amount on "insufficient funds" errors (for stake max)
    */
   async stakeTransaction(
     amount: number,
-    priority: number = 1
+    priority: number = 1,
+    sweepAll: boolean = false
   ): Promise<string> {
     if (!this.walletInstance || !this.walletInstance.is_initialized()) {
       throw new Error('Wallet not initialized');
     }
 
+    let currentAmount = amount;
+    const MAX_SWEEP_RETRIES = 10;
+    let sweepRetry = 0;
+
+    while (true) {
+      try {
+        return await this._createAndBroadcastStakeTransaction(currentAmount, priority);
+      } catch (e: any) {
+        const errorMsg = e?.message || String(e);
+
+        // Check if this is an "insufficient funds for fee" type error
+        const isInsufficientFunds = errorMsg.includes('not enough money') ||
+          errorMsg.includes('enough money to fund') ||
+          errorMsg.includes('insufficient') ||
+          errorMsg.includes('No single allowed subset');
+
+        if (sweepAll && isInsufficientFunds && sweepRetry < MAX_SWEEP_RETRIES) {
+          sweepRetry++;
+          // Reduce amount by 1% each retry to account for fee
+          currentAmount = currentAmount * 0.99;
+          // Also ensure we're not trying to stake less than dust
+          if (currentAmount < 0.0001) {
+            throw new Error('Amount too small after fee adjustment');
+          }
+          continue;
+        }
+
+        throw e;
+      }
+    }
+  }
+
+  /**
+   * Internal: Create and broadcast a stake transaction
+   */
+  private async _createAndBroadcastStakeTransaction(
+    amount: number,
+    priority: number = 1
+  ): Promise<string> {
     const amountAtomic = Math.floor(amount * ATOMIC_UNITS).toString();
     const MIXIN = 15; // Ring size 16 - 1
     const INPUTS_ESTIMATE = 60; // Estimate max inputs to ensure enough decoys
@@ -2467,6 +2497,7 @@ export class WalletService {
         console.warn('[WalletService] Mempool stream error:', error);
 
         this.mempoolStreamConnection?.close();
+        this.mempoolStreamConnection = null;  // Must nullify to allow reconnection
         this.mempoolReconnecting = false;
 
         // Attempt reconnection if we still have subscribers

@@ -54,6 +54,16 @@ module.exports = {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'hero-glow': 'conic-gradient(from 180deg at 50% 50%, #1a1a2e 0deg, #0f0f1a 180deg, #1a1a2e 360deg)',
       },
+      keyframes: {
+        'scale-in': {
+          '0%': { transform: 'scale(0)', opacity: '0' },
+          '50%': { transform: 'scale(1.2)' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+      },
+      animation: {
+        'scale-in': 'scale-in 0.2s ease-out forwards',
+      },
     },
   },
   plugins: [],

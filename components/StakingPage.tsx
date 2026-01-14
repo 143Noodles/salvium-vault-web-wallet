@@ -17,6 +17,7 @@ const StakingPage: React.FC = () => {
    const [isStaking, setIsStaking] = useState(false);
    const [stakeError, setStakeError] = useState<string | null>(null);
    const [stakeSuccess, setStakeSuccess] = useState<string | null>(null);
+   const [validationState, setValidationState] = useState<{ type: 'error' | 'warning' | null, message: string } | null>(null);
 
    // Overlay States
    const [isActiveStakesOpen, setIsActiveStakesOpen] = useState(false);
@@ -136,9 +137,54 @@ const StakingPage: React.FC = () => {
       return () => clearInterval(interval);
    }, []);
 
-   const numericAmount = parseFloat(stakeAmount) || 0;
+   // Validate stake amount: must be a positive number (no negatives, no scientific notation)
+   const isValidStakeAmount = (value: string): boolean => {
+      if (!value || value.trim() === '') return false;
+      // Reject scientific notation and negative signs
+      if (/[eE\-]/.test(value)) return false;
+      // Must be a valid positive decimal number (digits with optional single decimal point)
+      if (!/^\d+\.?\d*$/.test(value)) return false;
+      const num = parseFloat(value);
+      return num > 0 && Number.isFinite(num);
+   };
+
+   const numericAmount = isValidStakeAmount(stakeAmount) ? parseFloat(stakeAmount) : 0;
    // Use simulation for estimated returns (30-day stake)
    const estimatedReturns = simulateReturns(numericAmount).toFixed(2);
+
+   // Validate stake amount and detect when sweepAll is needed for fee handling
+   useEffect(() => {
+      if (!isValidStakeAmount(stakeAmount)) {
+         setValidationState(null);
+         return;
+      }
+
+      const amount = parseFloat(stakeAmount);
+      const available = wallet.balance.unlockedBalanceSAL || 0;
+
+      // Check if amount exceeds balance
+      if (amount > available) {
+         setValidationState({
+            type: 'error',
+            message: 'Amount exceeds available balance'
+         });
+         return;
+      }
+
+      // Estimate fee buffer - stake transactions typically need ~0.001-0.01 SAL for fees
+      // If amount is within 2% of balance or leaves less than 0.01 SAL, use sweepAll
+      const feeBuffer = Math.max(0.01, available * 0.02);
+      const remainingAfterStake = available - amount;
+
+      if (remainingAfterStake < feeBuffer) {
+         setValidationState({
+            type: 'warning',
+            message: 'Amount will be adjusted to cover transaction fee'
+         });
+      } else {
+         setValidationState(null);
+      }
+   }, [stakeAmount, wallet.balance.unlockedBalanceSAL]);
 
    // Get active and unlocked stakes from wallet - these update reactively
    const activeStakes = useMemo(() =>
@@ -174,19 +220,21 @@ const StakingPage: React.FC = () => {
    );
 
    const handleMax = () => {
-      const maxAmount = Math.max(0, wallet.balance.unlockedBalanceSAL - 0.001);
-      setStakeAmount(maxAmount.toFixed(8));
+      // Set full balance - validation will auto-detect and enable sweepAll
+      const maxAmount = wallet.balance.unlockedBalanceSAL;
+      setStakeAmount(maxAmount > 0 ? maxAmount.toString() : '');
+      setStakeError(null);
    };
 
    // Handle stake creation
    const handleStake = async () => {
-      if (!numericAmount || numericAmount <= 0) {
-         setStakeError('Please enter a valid amount');
+      // Block if validation error
+      if (validationState?.type === 'error') {
          return;
       }
 
-      if (numericAmount > wallet.balance.unlockedBalanceSAL) {
-         setStakeError('Insufficient unlocked balance');
+      if (!isValidStakeAmount(stakeAmount)) {
+         setStakeError('Please enter a valid positive amount');
          return;
       }
 
@@ -195,7 +243,9 @@ const StakingPage: React.FC = () => {
       setStakeSuccess(null);
 
       try {
-         const txHash = await wallet.stakeTransaction(numericAmount);
+         // Use sweepAll when amount is close to max to auto-adjust for fees
+         const sweepAll = validationState?.type === 'warning';
+         const txHash = await wallet.stakeTransaction(numericAmount, sweepAll);
          setStakeSuccess(`Stake transaction submitted! TX: ${txHash.slice(0, 16)}...`);
          setStakeAmount(''); // Clear the input
 
@@ -457,12 +507,19 @@ const StakingPage: React.FC = () => {
                         />
                         <button onClick={handleMax} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-accent-primary hover:text-accent-primary/80" disabled={isStaking}>MAX</button>
                      </div>
+                     {/* Validation Message */}
+                     {validationState && (
+                        <div className={`text-xs mt-1 ${validationState.type === 'error' ? 'text-red-400' : 'text-yellow-400'} flex items-center gap-1`}>
+                           <AlertCircle className="w-3 h-3" />
+                           {validationState.message}
+                        </div>
+                     )}
                   </div>
 
                   <div className="bg-bg-secondary/50 rounded-xl p-4 border border-border-color/50 space-y-2">
                      <div className="flex justify-between text-sm">
-                        <span className="text-text-muted">Lock Duration</span>
-                        <span className="text-white font-mono">30 Days</span>
+                        <span className="text-text-muted">Block Height Unlock</span>
+                        <span className="text-white font-mono">{((wallet.syncStatus?.daemonHeight || 0) + 21601).toLocaleString()}</span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-text-muted flex items-center gap-1">
@@ -477,7 +534,7 @@ const StakingPage: React.FC = () => {
                         <span className="text-accent-success font-mono">+{estimatedReturns} SAL</span>
                      </div>
                      <div className="flex justify-between text-sm">
-                        <span className="text-text-muted">Unlock Date</span>
+                        <span className="text-text-muted">Unlock Date (~30 Days)</span>
                         <span className="text-white font-mono">
                            {new Date(Date.now() + parseInt(stakeDuration) * 24 * 60 * 60 * 1000).toLocaleDateString()}
                         </span>
@@ -503,7 +560,7 @@ const StakingPage: React.FC = () => {
                   <div className="mt-auto space-y-3">
                      <Button
                         className="w-full py-3"
-                        disabled={!numericAmount || numericAmount > wallet.balance.unlockedBalanceSAL || isStaking}
+                        disabled={!isValidStakeAmount(stakeAmount) || validationState?.type === 'error' || isStaking}
                         onClick={handleStake}
                      >
                         {isStaking ? (

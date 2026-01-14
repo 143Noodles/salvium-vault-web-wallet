@@ -6,7 +6,7 @@ import { isMobile } from 'react-device-detect';
 import { parseBackup, restoreFromBackup, BackupData } from '../services/BackupService';
 
 type OnboardingMode = 'initial' | 'create' | 'restore';
-type CreateStep = 'seed' | 'password';
+type CreateStep = 'seed' | 'verify' | 'password';
 type RestoreStep = 'method' | 'input' | 'password' | 'upload' | 'backup-password';
 
 interface OnboardingProps {
@@ -21,6 +21,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [createStep, setCreateStep] = useState<CreateStep>('seed');
   const [generatedSeed, setGeneratedSeed] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Seed Verification State
+  const [verifyIndices, setVerifyIndices] = useState<[number, number]>([0, 0]);
+  const [verifyInput1, setVerifyInput1] = useState('');
+  const [verifyInput2, setVerifyInput2] = useState('');
+  const [verifyError, setVerifyError] = useState('');
 
   // Restore Flow State
   const [restoreStep, setRestoreStep] = useState<RestoreStep>('method');
@@ -96,6 +102,36 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     if (generatedSeed) {
       navigator.clipboard.writeText(generatedSeed);
     }
+  };
+
+  const startSeedVerification = () => {
+    const words = generatedSeed.split(' ');
+    const idx1 = Math.floor(Math.random() * words.length);
+    let idx2 = Math.floor(Math.random() * words.length);
+    while (idx2 === idx1) {
+      idx2 = Math.floor(Math.random() * words.length);
+    }
+    const sorted = [idx1, idx2].sort((a, b) => a - b) as [number, number];
+    setVerifyIndices(sorted);
+    setVerifyInput1('');
+    setVerifyInput2('');
+    setVerifyError('');
+    setCreateStep('verify');
+  };
+
+  const handleVerifySeed = () => {
+    const words = generatedSeed.split(' ');
+    const word1 = words[verifyIndices[0]];
+    const word2 = words[verifyIndices[1]];
+
+    if (verifyInput1.trim().toLowerCase() !== word1.toLowerCase() ||
+        verifyInput2.trim().toLowerCase() !== word2.toLowerCase()) {
+      setVerifyError('Incorrect words. Please check your seed phrase and try again.');
+      return;
+    }
+
+    setVerifyError('');
+    setCreateStep('password');
   };
 
   const handleCreateWallet = async () => {
@@ -346,9 +382,67 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   <Copy size={16} className="mr-2" />
                   Copy
                 </Button>
-                <Button className="flex-[2]" onClick={() => setCreateStep('password')} disabled={!generatedSeed}>
+                <Button className="flex-[2]" onClick={startSeedVerification} disabled={!generatedSeed}>
                   I Saved It
                   <ChevronRight size={16} className="ml-2" />
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {createStep === 'verify' && (
+            <Card glow className="space-y-6 max-w-md mx-auto">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
+                  <Shield size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">Verify Your Seed</h2>
+                <p className="text-text-muted text-sm">Enter the requested words to confirm you saved your recovery phrase.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">
+                    Word #{verifyIndices[0] + 1}
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder={`Enter word #${verifyIndices[0] + 1}`}
+                    value={verifyInput1}
+                    onChange={(e) => setVerifyInput1(e.target.value)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck="false"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">
+                    Word #{verifyIndices[1] + 1}
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder={`Enter word #${verifyIndices[1] + 1}`}
+                    value={verifyInput2}
+                    onChange={(e) => setVerifyInput2(e.target.value)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck="false"
+                  />
+                </div>
+                {verifyError && <p className="text-red-400 text-xs">{verifyError}</p>}
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="ghost" onClick={() => setCreateStep('seed')} className="flex-1">Back</Button>
+                <Button
+                  className="flex-[2]"
+                  onClick={handleVerifySeed}
+                  disabled={!verifyInput1.trim() || !verifyInput2.trim()}
+                >
+                  Verify
+                  <CheckCircle2 size={16} className="ml-2" />
                 </Button>
               </div>
             </Card>

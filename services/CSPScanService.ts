@@ -276,9 +276,9 @@ class CSPScanService {
       completedChunks: 0,
       totalChunks: 0,
       bytesReceived: 0,
-      // v5.2.8: Unified progress
-      overallProgress: 0.01,
-      percentage: 1,
+      // Calibrated: Scanner init is ~0.1% of total time
+      overallProgress: 0.001,
+      percentage: 0,
       transactionsFound: 0,
       statusMessage: 'Preparing wallet...'
     });
@@ -394,9 +394,9 @@ class CSPScanService {
         chunkSize: 1000,
         onProgress: (data: any) => {
           const elapsed = (performance.now() - startTime) / 1000;
-          // Phase 1 is 2-65% of overall progress
+          // Phase 1 (ViewTag Scan) is 1-76% of overall progress (based on timing calibration)
           const phase1Progress = data.progress || 0;
-          const overallProgress = 0.02 + (0.63 * phase1Progress);
+          const overallProgress = 0.01 + (0.75 * phase1Progress);
           const progress: ScanProgress = {
             progress: phase1Progress,
             scannedBlocks: data.scannedBlocks || 0,
@@ -449,6 +449,25 @@ class CSPScanService {
       // We download the server's spent index and filter locally.
       // Server never learns which key images belong to us (privacy preserved).
       // ================================================================
+      // Report progress for Spent Discovery phase (97-100%)
+      if (onProgress) {
+        onProgress({
+          progress: 0,
+          phase: '4',
+          message: 'Checking spent outputs...',
+          scannedBlocks: 0,
+          totalBlocks: 0,
+          completedChunks: 0,
+          totalChunks: 0,
+          viewTagMatches: 0,
+          bytesReceived: 0,
+          blocksPerSecond: 0,
+          overallProgress: 0.97,
+          percentage: 97,
+          transactionsFound: outputsFound,
+          statusMessage: 'Checking spent outputs...'
+        });
+      }
       try {
         const initialHadKeyImages = !!(keyImagesCsv && keyImagesCsv.length >= 64);
         const canGetKeyImages = typeof wallet.get_key_images_csv === 'function';
@@ -467,11 +486,34 @@ class CSPScanService {
             const spentMatches: Array<{ ki: string, tx: string, h: number, idx: number }> = [];
             let currentHeight = startHeight;
             const BATCH_SIZE = 50000; // Download in batches to avoid huge responses
+            const heightRange = endHeight - startHeight;
 
             const spentIndexStart = performance.now();
 
             while (currentHeight <= endHeight) {
               try {
+                // Report smooth progress within spent discovery phase (97-100%)
+                if (onProgress && heightRange > 0) {
+                  const spentProgress = Math.min(1, (currentHeight - startHeight) / heightRange);
+                  const overallProgress = 0.97 + (0.03 * spentProgress);
+                  onProgress({
+                    progress: spentProgress,
+                    phase: '4',
+                    message: `Checking spent outputs... ${Math.round(spentProgress * 100)}%`,
+                    scannedBlocks: currentHeight - startHeight,
+                    totalBlocks: heightRange,
+                    completedChunks: 0,
+                    totalChunks: 0,
+                    viewTagMatches: 0,
+                    bytesReceived: 0,
+                    blocksPerSecond: 0,
+                    overallProgress,
+                    percentage: Math.round(overallProgress * 100),
+                    transactionsFound: outputsFound,
+                    statusMessage: 'Checking spent outputs...'
+                  });
+                }
+
                 const response = await fetch('/vault/api/wallet/get-spent-index', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -555,6 +597,26 @@ class CSPScanService {
         }
       } catch (e) {
         console.warn('[CSPScanService] Failed to get final key images:', e);
+      }
+
+      // Report 100% completion
+      if (onProgress) {
+        onProgress({
+          progress: 1,
+          phase: 'complete',
+          message: 'Scan complete',
+          scannedBlocks: endHeight - startHeight,
+          totalBlocks: endHeight - startHeight,
+          completedChunks: 0,
+          totalChunks: 0,
+          viewTagMatches: 0,
+          bytesReceived: 0,
+          blocksPerSecond: 0,
+          overallProgress: 1.0,
+          percentage: 100,
+          transactionsFound: outputsFound,
+          statusMessage: 'Scan complete'
+        });
       }
 
       return {
@@ -952,10 +1014,12 @@ class CSPScanService {
       processedChunks += 50;
       if (processedChunks > totalChunks) processedChunks = totalChunks;
 
-      // Progress Update - Phase 2 is 65-92% of overall progress
+      // Progress Update - Phase 2 (Fetch+Ingest) is 76-90% of overall progress
+      // (based on timing: 69.19s fetch+ingest out of 106.45s targeted rescan = 65%)
+      // Phase 3b (stake returns) handles 90-97%
       if (onProgress) {
         const phase2Progress = processedChunks / totalChunks;
-        const overallProgress = 0.65 + (0.27 * phase2Progress);
+        const overallProgress = 0.76 + (0.14 * phase2Progress);
 
         onProgress({
           progress: phase2Progress,
@@ -1056,11 +1120,13 @@ class CSPScanService {
 
           if (returnHeightsInRange.length > 0) {
             const stakeHeightsToProcess = returnHeightsInRange.map(rh => rh - STAKE_RETURN_OFFSET);
-            const stakeReturnsFound = await this.fetchStakeReturnsSparse(wallet, Module, stakeHeightsToProcess, networkHeight);
+            // Phase 3b runs from ~90% to ~97% (based on timing: 35.91s / 106.45s ≈ 34% of targeted rescan)
+            const stakeReturnsFound = await this.fetchStakeReturnsSparse(wallet, Module, stakeHeightsToProcess, networkHeight, onProgress, 0.90, 0.07);
             if (stakeReturnsFound > 0) totalOutputsFound += stakeReturnsFound;
           }
         } else {
-          const stakeReturnsFound = await this.fetchStakeReturnsSparse(wallet, Module, allStakeHeights, networkHeight);
+          // Phase 3b runs from ~90% to ~97% (based on timing: 35.91s / 106.45s ≈ 34% of targeted rescan)
+          const stakeReturnsFound = await this.fetchStakeReturnsSparse(wallet, Module, allStakeHeights, networkHeight, onProgress, 0.90, 0.07);
           if (stakeReturnsFound > 0) totalOutputsFound += stakeReturnsFound;
         }
 
@@ -1171,7 +1237,10 @@ class CSPScanService {
     wallet: any,
     Module: any,
     stakeHeights: number[],
-    networkHeight: number
+    networkHeight: number,
+    onProgress?: (progress: ScanProgress) => void,
+    progressBase: number = 0.90,
+    progressRange: number = 0.07
   ): Promise<number> {
     const STAKE_RETURN_OFFSET = 21601;
 
@@ -1200,6 +1269,29 @@ class CSPScanService {
 
       for (let batchStart = 0; batchStart < returnHeights.length; batchStart += MAX_HEIGHTS_PER_REQUEST) {
         const batchHeights = returnHeights.slice(batchStart, batchStart + MAX_HEIGHTS_PER_REQUEST);
+
+        // Report smooth progress within stake returns phase
+        if (onProgress && returnHeights.length > 0) {
+          const stakeProgress = batchStart / returnHeights.length;
+          const overallProgress = progressBase + (progressRange * stakeProgress);
+          onProgress({
+            progress: stakeProgress,
+            phase: '3b',
+            message: `Processing stake returns... ${Math.round(stakeProgress * 100)}%`,
+            scannedBlocks: batchStart,
+            totalBlocks: returnHeights.length,
+            completedChunks: 0,
+            totalChunks: 0,
+            viewTagMatches: 0,
+            bytesReceived: 0,
+            blocksPerSecond: 0,
+            overallProgress,
+            percentage: Math.round(overallProgress * 100),
+            transactionsFound: txsMatched,
+            statusMessage: 'Processing stake returns...'
+          });
+        }
+
         await yieldToUI();
 
         const response = await fetch('/vault/api/wallet/sparse-by-heights', {

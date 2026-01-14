@@ -223,7 +223,7 @@ interface WalletContextType {
     lockWallet: () => void;
     startScan: (fromHeight?: number) => Promise<void>;
     sendTransaction: (address: string, amount: number, paymentId?: string, sweepAll?: boolean) => Promise<string>;
-    stakeTransaction: (amount: number) => Promise<string>;
+    stakeTransaction: (amount: number, sweepAll?: boolean) => Promise<string>;
     createSubaddress: (label: string) => string;
     addContact: (name: string, address: string) => void;
     updateContact: (contact: Contact) => void;
@@ -1614,13 +1614,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                     const newTxs = walletService.getTransactions();
                     const cachedTxs = encryptedWallet.cachedTransactions || [];
 
-                    // Merge: combine cached + new, dedupe by txid
+                    // Aggregate newTxs - WASM may return multiple entries per txid for multi-subaddress spends
+                    const newTxMap = new Map<string, WalletTransaction>();
+                    for (const tx of newTxs) {
+                        const existing = newTxMap.get(tx.txid);
+                        if (existing && existing.type === 'out' && tx.type === 'out') {
+                            existing.amount += tx.amount;
+                            if (tx.fee) existing.fee = (existing.fee || 0) + tx.fee;
+                        } else if (!existing) {
+                            newTxMap.set(tx.txid, { ...tx });
+                        }
+                    }
+                    const aggregatedNewTxs = Array.from(newTxMap.values());
+
+                    // Merge: combine cached + aggregated new, dedupe by txid
                     const txMap = new Map<string, WalletTransaction>();
                     for (const tx of cachedTxs) {
                         txMap.set(tx.txid, tx);
                     }
-                    for (const tx of newTxs) {
-                        txMap.set(tx.txid, tx); // New tx overwrites if same txid (updated confirmations, etc.)
+                    for (const tx of aggregatedNewTxs) {
+                        txMap.set(tx.txid, tx); // New overwrites cached (has updated confirmations, etc.)
                     }
                     const mergedTxs = Array.from(txMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
@@ -1676,17 +1689,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                     const wasRestoredFromVault = restoredFromVaultRef.current;
 
                     // Find genuinely new transactions (in this scan but not in cache)
-                    // CRITICAL: Only filter out txs that are CONFIRMED in cache.
-                    // If the cached version was unconfirmed (height 0) but new version is confirmed,
-                    // this is a confirmation event that should contribute to the balance delta.
                     const newlyFoundTxs = newTxs.filter(tx => {
                         const cachedTx = cachedTxs.find(ct => ct.txid === tx.txid);
-                        if (!cachedTx) return true; // Not in cache = new
-                        // If cached was unconfirmed (height 0) but this one is confirmed, count it as new
-                        if (cachedTx.height === 0 && tx.height > 0) {
-                            return true;
-                        }
-                        return false; // Already in cache with height > 0 = duplicate
+                        if (!cachedTx) return true;
+                        if (cachedTx.height === 0 && tx.height > 0) return true;
+                        return false;
                     });
                     const hasNewTxs = newlyFoundTxs.length > 0;
                     const duplicatesFiltered = newTxs.length - newlyFoundTxs.length;
@@ -2046,8 +2053,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     };
 
     // Stake transaction
-    const stakeTransaction = async (amount: number): Promise<string> => {
-        const txHash = await walletService.stakeTransaction(amount, 1);
+    const stakeTransaction = async (amount: number, sweepAll: boolean = false): Promise<string> => {
+        const txHash = await walletService.stakeTransaction(amount, 1, sweepAll);
 
         // Add to pending transactions for immediate UI feedback
         const pendingTx: WalletTransaction = {

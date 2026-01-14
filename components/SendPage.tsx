@@ -86,7 +86,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         if (remaining > 0) {
           setValidationState({
             type: 'warning',
-            message: `Insufficient funds for fee. ${fee.toFixed(5)} SAL will be subtracted from the total.`
+            message: 'Amount will be adjusted to cover transaction fee'
           });
           setActualSendAmount(remaining);
         } else {

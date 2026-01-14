@@ -170,7 +170,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
           <div className="w-full">
             <div className="h-3 w-full bg-[#1a1a2e] rounded-full overflow-hidden mb-4 border border-white/5 relative">
               <div
-                className="h-full bg-accent-primary rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] transition-all duration-300 ease-out relative overflow-hidden"
+                className="h-full bg-accent-primary rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] transition-all duration-500 ease-out relative overflow-hidden"
                 style={{ width: `${Math.min(100, percentage)}%` }}
               >
                 {/* Subtle Shimmer Overlay */}

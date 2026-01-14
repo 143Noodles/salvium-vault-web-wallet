@@ -6,7 +6,7 @@ const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { TabView } from '../App';
 import { useWallet, WalletStats } from '../services/WalletContext';
-import { Card, Button, Badge } from './UIComponents';
+import { Card, Button, Badge, TruncatedAddress } from './UIComponents';
 import BalanceChart from './BalanceChart';
 import TransactionList from './TransactionList';
 import { formatSAL } from '../utils/format';
@@ -16,6 +16,7 @@ import {
    TrendingUp,
    MoreHorizontal,
    Copy,
+   Check,
    Clock,
    Layers,
    Plus,
@@ -32,6 +33,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
    const [hideBalance, setHideBalance] = useState(false);
+   const [copied, setCopied] = useState(false);
    const wallet = useWallet();
 
    // Use real wallet address
@@ -40,15 +42,9 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
    const copyToClipboard = () => {
       if (walletAddress) {
          navigator.clipboard.writeText(walletAddress);
+         setCopied(true);
+         setTimeout(() => setCopied(false), 2000);
       }
-   };
-
-   // Truncate logic: keep start and end, hide middle. 
-   // Aiming for a balanced look while respecting the request to truncate the middle.
-   const formatAddress = (addr: string) => {
-      if (!addr) return '';
-      if (addr.length < 50) return addr;
-      return `${addr.slice(0, 30)}...${addr.slice(-30)}`;
    };
 
    const unlockedBalance = stats.unlockedBalance;
@@ -92,9 +88,9 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
    }, []);
 
    return (
-      <div className={`relative animate-fade-in ${isMobileOrTablet
-         ? 'flex flex-col h-full gap-4'
-         : 'overflow-hidden grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] h-[calc(100vh-7rem)] p-0 gap-6'
+      <div className={`relative animate-fade-in gap-4 md:gap-6 ${isMobileOrTablet
+         ? 'flex flex-col h-full'
+         : 'overflow-hidden grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] h-[calc(100vh-7rem)] p-0'
          }`}>
          {/* Force layout update v3 */}
          {/* Force layout update */}
@@ -104,7 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
             : 'col-span-8 flex-shrink h-full'
             }`}>
             <Card
-               className={`relative overflow-hidden group flex flex-col border-white/5 ${isMobileOrTablet ? 'min-h-[11.25rem]' : 'min-h-[13.75rem] md:h-full'}`}
+               className={`relative overflow-hidden group flex flex-col border-white/5 md:h-full ${isMobileOrTablet ? 'min-h-[11.25rem]' : 'min-h-[13.75rem]'}`}
                glow
                style={{ containerType: 'size' } as React.CSSProperties}
             >
@@ -171,14 +167,16 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                            </div>
                            <div className="bg-black/30 rounded-xl p-3.5 border border-white/10 backdrop-blur-md group-hover/addr:border-accent-primary/50 group-hover/addr:bg-black/50 transition-all duration-300 relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-accent-primary/0 via-accent-primary/5 to-accent-primary/0 translate-x-[-100%] group-hover/addr:translate-x-[100%] transition-transform duration-1000"></div>
-                              <div className="flex items-center justify-between gap-4">
-                                 <span className="font-mono text-text-primary select-all opacity-80 group-hover/addr:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-ellipsis 2xl:hidden text-sm">
-                                    {formatAddress(walletAddress)}
-                                 </span>
-                                 <span className="hidden 2xl:block font-mono text-sm min-[1921px]:text-sm text-text-primary select-all opacity-80 group-hover/addr:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-ellipsis">
-                                    {walletAddress}
-                                 </span>
-                                 <Copy size={16} className="text-text-muted group-hover/addr:text-accent-primary shrink-0 transition-colors" />
+                              <div className="flex items-center justify-between gap-4 min-w-0">
+                                 <TruncatedAddress
+                                    address={walletAddress}
+                                    className="font-mono text-text-primary select-all opacity-80 group-hover/addr:opacity-100 transition-opacity whitespace-nowrap text-sm"
+                                 />
+                                 {copied ? (
+                                    <Check size={16} className="text-accent-success shrink-0 transition-colors animate-scale-in" />
+                                 ) : (
+                                    <Copy size={16} className="text-text-muted group-hover/addr:text-accent-primary shrink-0 transition-colors" />
+                                 )}
                               </div>
                            </div>
                         </div>
@@ -298,7 +296,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
             ? ''
             : 'col-span-8 h-full'
             }`}>
-            <Card className={`flex-1 flex flex-col bg-[#131320] border-white/5 ${isMobileOrTablet ? '' : 'h-full md:min-h-0'}`} noPadding>
+            <Card className="flex-1 flex flex-col bg-[#131320] border-white/5 h-full md:min-h-0" noPadding>
                <div className="flex justify-between items-center mb-2 flex-shrink-0 px-5 pt-5">
                   <div className="flex items-center gap-4">
                      <div className="p-2 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-lg text-white">

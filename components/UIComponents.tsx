@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { X } from './Icons';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 
@@ -148,14 +148,18 @@ interface OverlayProps {
 export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, children, className = '' }) => {
   if (!isOpen) return null;
 
-  // On mobile/tablet, position below the header and fill the space; on desktop, center with max dimensions
+  // On mobile/tablet, position below the header; on desktop, use full screen
   const containerStyle: React.CSSProperties = isMobileOrTablet
     ? { top: 'calc(56px + env(safe-area-inset-top))', left: 0, right: 0, bottom: 0 }
     : { top: 0, left: 0, right: 0, bottom: 0 };
 
+  const contentStyle: React.CSSProperties = isMobileOrTablet
+    ? { height: '100%', marginBottom: 'env(safe-area-inset-bottom)' }
+    : { height: 'calc(100dvh - (56px + env(safe-area-inset-top) + env(safe-area-inset-bottom)))', marginBottom: 'env(safe-area-inset-bottom)' };
+
   return (
     <div
-      className={`fixed z-[100] flex ${isMobileOrTablet ? 'flex-col' : 'justify-center items-center p-4'}`}
+      className="fixed z-[100] flex items-end md:items-center justify-center sm:p-4"
       style={containerStyle}
     >
       {/* Backdrop */}
@@ -166,11 +170,11 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
       ></div>
 
       {/* Content */}
-      <div
-        className={`relative bg-[#131320] shadow-2xl flex flex-col animate-slide-up ${isMobileOrTablet ? 'w-full h-full' : 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[85vh]'} ${className}`}
+      <div className={`relative w-full md:max-w-lg bg-[#131320] md:rounded-2xl rounded-t-2xl border-t md:border border-white/10 shadow-2xl flex flex-col md:h-auto animate-slide-up ${className}`}
+        style={contentStyle}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 ${isMobileOrTablet ? '' : 'rounded-t-2xl'}`}>
+        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 rounded-t-2xl">
           <h3 className="text-lg font-bold text-white">{title}</h3>
           <button
             onClick={onClose}
@@ -181,10 +185,102 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {children}
         </div>
       </div>
+    </div>
+  );
+};
+
+interface TruncatedAddressProps {
+  address: string;
+  className?: string;
+}
+
+export const TruncatedAddress: React.FC<TruncatedAddressProps> = ({ address, className = '' }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [displayText, setDisplayText] = useState(address);
+  const [charWidth, setCharWidth] = useState(0);
+
+  // Measure character width on mount using a hidden span
+  useLayoutEffect(() => {
+    if (measureRef.current) {
+      // Measure with a sample of characters to get average width
+      measureRef.current.textContent = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      const width = measureRef.current.getBoundingClientRect().width / 36;
+      setCharWidth(width);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!wrapperRef.current || charWidth === 0) return;
+
+    const updateDisplay = () => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+
+      // Get available width from our own wrapper (which respects flex constraints)
+      const containerWidth = wrapper.getBoundingClientRect().width;
+      const ellipsisWidth = charWidth * 3; // "..." is 3 chars
+      const safetyMargin = 4; // A few pixels buffer
+      const availableWidth = containerWidth - ellipsisWidth - safetyMargin;
+
+      // Calculate how many characters can fit
+      const maxChars = Math.floor(availableWidth / charWidth);
+
+      if (!address) {
+        setDisplayText('');
+        return;
+      }
+
+      // If the full address fits, show it all
+      if (address.length * charWidth <= containerWidth) {
+        setDisplayText(address);
+        return;
+      }
+
+      // Calculate how many characters to show on each side
+      // We need at least 4 chars on each side to be useful
+      const minSideChars = 4;
+      if (maxChars < minSideChars * 2) {
+        // Not enough space, show minimal truncation
+        setDisplayText(`${address.slice(0, minSideChars)}...${address.slice(-minSideChars)}`);
+        return;
+      }
+
+      // Split available characters between start and end (evenly)
+      const sideChars = Math.floor(maxChars / 2);
+      setDisplayText(`${address.slice(0, sideChars)}...${address.slice(-sideChars)}`);
+    };
+
+    // Initial update
+    updateDisplay();
+
+    // Set up ResizeObserver to update on our wrapper resize
+    const resizeObserver = new ResizeObserver(() => {
+      updateDisplay();
+    });
+
+    resizeObserver.observe(wrapperRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [address, charWidth]);
+
+  return (
+    // Wrapper div that properly constrains width in flex layouts
+    <div ref={wrapperRef} className="flex-1 min-w-0 overflow-hidden">
+      {/* Hidden span to measure character width */}
+      <span
+        ref={measureRef}
+        className={`font-mono text-sm absolute opacity-0 pointer-events-none whitespace-nowrap ${className}`}
+        style={{ visibility: 'hidden', position: 'absolute', top: -9999 }}
+        aria-hidden="true"
+      />
+      <span className={className}>
+        {displayText}
+      </span>
     </div>
   );
 };

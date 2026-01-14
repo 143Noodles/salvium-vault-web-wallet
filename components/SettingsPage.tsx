@@ -5,7 +5,7 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge } from './UIComponents';
-import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink } from './Icons';
+import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2 } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { downloadBackup } from '../services/BackupService';
 import { BiometricService } from '../services/BiometricService';
@@ -59,6 +59,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
    const [passwordError, setPasswordError] = useState('');
    const [isChangingPassword, setIsChangingPassword] = useState(false);
+   const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
 
 
 
@@ -193,7 +194,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       try {
          await wallet.changePassword(currentPassword, newPassword);
          closePasswordModal();
-         // Optionally show a success toast or notification?
+         setShowPasswordSuccess(true);
       } catch (err: any) {
          console.error('Change password failed:', err);
          setPasswordError(err.message || 'Failed to change password');
@@ -665,6 +666,29 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            )}
                         </Button>
                      </div>
+                  </Card>
+               </div>
+            )
+         }
+
+         {/* Password Changed Success Modal */}
+         {
+            showPasswordSuccess && (
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+                  <Card className="max-w-sm w-full space-y-6 relative animate-scale-up text-center">
+                     <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                        <CheckCircle2 size={32} className="text-green-500" />
+                     </div>
+                     <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Password Changed</h3>
+                        <p className="text-text-muted text-sm">Your vault password has been updated successfully.</p>
+                     </div>
+                     <Button
+                        className="w-full"
+                        onClick={() => setShowPasswordSuccess(false)}
+                     >
+                        Done
+                     </Button>
                   </Card>
                </div>
             )

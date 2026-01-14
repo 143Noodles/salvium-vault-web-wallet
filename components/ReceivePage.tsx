@@ -5,8 +5,8 @@ import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { QRCodeSVG } from 'qrcode.react';
-import { Card, Button, Badge, Input, Overlay } from './UIComponents';
-import { Download, QrCode, Copy, Plus, MoreHorizontal, Layers, X, Search } from './Icons';
+import { Card, Button, Badge, Input, Overlay, TruncatedAddress } from './UIComponents';
+import { Download, QrCode, Copy, Check, Plus, MoreHorizontal, Layers, X, Search } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { formatSAL } from '../utils/format';
 
@@ -18,6 +18,7 @@ const ReceivePage: React.FC = () => {
    const [newSubaddressLabel, setNewSubaddressLabel] = useState('');
    const [isCreating, setIsCreating] = useState(false);
    const [isSubaddressOpen, setIsSubaddressOpen] = useState(false); // Mobile Overlay State
+   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
    // Get primary address from wallet
    const primaryAddress = wallet.address || 'Loading...';
@@ -29,6 +30,8 @@ const ReceivePage: React.FC = () => {
 
    const copyToClipboard = (text: string) => {
       navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 2000);
    };
 
    const handleCreateSubaddress = () => {
@@ -97,8 +100,17 @@ const ReceivePage: React.FC = () => {
                            className="h-8 text-xs hover:bg-white/10"
                            onClick={() => copyToClipboard(sub.address)}
                         >
-                           <Copy className="mr-1.5 w-3 h-3" />
-                           Copy
+                           {copiedAddress === sub.address ? (
+                              <>
+                                 <Check className="mr-1.5 w-3 h-3 animate-scale-in" />
+                                 Copied!
+                              </>
+                           ) : (
+                              <>
+                                 <Copy className="mr-1.5 w-3 h-3" />
+                                 Copy
+                              </>
+                           )}
                         </Button>
                      </div>
                   </div>
@@ -167,14 +179,16 @@ const ReceivePage: React.FC = () => {
                      </div>
                      <div className="bg-black/30 rounded-xl p-3.5 border border-white/10 backdrop-blur-md group-hover/addr:border-accent-primary/50 group-hover/addr:bg-black/50 transition-all duration-300 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-accent-primary/0 via-accent-primary/5 to-accent-primary/0 translate-x-[-100%] group-hover/addr:translate-x-[100%] transition-transform duration-1000"></div>
-                        <div className="flex items-center justify-between gap-4">
-                           <span className="font-mono text-text-primary select-all opacity-80 group-hover/addr:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-ellipsis text-sm">
-                              {isMobileOrTablet
-                                 ? (primaryAddress.length > 20 ? `${primaryAddress.slice(0, 10)}...${primaryAddress.slice(-10)}` : primaryAddress)
-                                 : (primaryAddress.length > 50 ? `${primaryAddress.slice(0, 30)}...${primaryAddress.slice(-30)}` : primaryAddress)
-                              }
-                           </span>
-                           <Copy className="text-text-muted group-hover/addr:text-accent-primary shrink-0 transition-colors w-4 h-4" />
+                        <div className="flex items-center justify-between gap-4 min-w-0">
+                           <TruncatedAddress
+                              address={primaryAddress}
+                              className="font-mono text-text-primary select-all opacity-80 group-hover/addr:opacity-100 transition-opacity whitespace-nowrap text-sm"
+                           />
+                           {copiedAddress === primaryAddress ? (
+                              <Check className="text-accent-success shrink-0 transition-colors w-4 h-4 animate-scale-in" />
+                           ) : (
+                              <Copy className="text-text-muted group-hover/addr:text-accent-primary shrink-0 transition-colors w-4 h-4" />
+                           )}
                         </div>
                      </div>
                   </div>
@@ -182,8 +196,17 @@ const ReceivePage: React.FC = () => {
                   {/* Copy Button (Browser Only) */}
                   <div className="hidden md:flex gap-3">
                      <Button className="flex-1 py-3" onClick={() => copyToClipboard(primaryAddress)}>
-                        <Copy className="mr-2 w-[1.125rem] h-[1.125rem]" />
-                        Copy Address
+                        {copiedAddress === primaryAddress ? (
+                           <>
+                              <Check className="mr-2 w-[1.125rem] h-[1.125rem] animate-scale-in" />
+                              Copied!
+                           </>
+                        ) : (
+                           <>
+                              <Copy className="mr-2 w-[1.125rem] h-[1.125rem]" />
+                              Copy Address
+                           </>
+                        )}
                      </Button>
                   </div>
                </div>
