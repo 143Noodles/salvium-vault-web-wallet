@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { isBrowser } from 'react-device-detect';
+import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
+
+// Device detection helpers for responsive layouts
+const isTabletDevice = isTablet || isIPad13;
+const isMobileOrTablet = isMobile || isTabletDevice;
 import {
   AreaChart,
   Area,
@@ -184,7 +188,7 @@ const BalanceChart: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
               <AreaChart
                 data={filteredData}
-                margin={{ top: 10, right: 5, left: 0, bottom: isBrowser ? 20 : 0 }}
+                margin={{ top: 10, right: 5, left: 0, bottom: isMobileOrTablet ? 0 : 20 }}
               >
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
