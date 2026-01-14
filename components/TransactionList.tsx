@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
+import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 import { useWallet } from '../services/WalletContext';
 import { ArrowUpRight, ArrowDownLeft, Layers, Clock, ChevronLeft, ChevronRight } from './Icons';
 import { Badge, Button } from './UIComponents';
 import { formatSAL } from '../utils/format';
 import { WalletTransaction } from '../services/WalletService';
+
+// Device detection helpers for responsive layouts
+const isTabletDevice = isTablet || isIPad13;
+const isMobileOrTablet = isMobile || isTabletDevice;
 
 const ITEMS_PER_PAGE = 50;
 // Unlock confirmations by transaction type:
@@ -198,16 +203,13 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 bg-[#161622] z-10 shadow-sm">
             <tr className="border-b border-border-color/50 text-text-muted text-xs uppercase tracking-wider">
-              {/* Mobile Logic: 
-                  Explorer shows: Height, Age, Hash, Type, Fee(hide), Outputs(hide), In/Out, Size(hide)
-                  We have: Block, Date(Age), Hash, Type, Amount, Status
-                  Mobile visible: Block, Hash/Type, Amount
-               */}
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium w-20 md:w-auto">Block</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium hidden md:table-cell">Date</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium">Type / Hash</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium text-right">Amount</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium text-right hidden md:table-cell">Status</th>
+              {/* Mobile/Tablet: Block, Hash/Type, Amount */}
+              {/* Desktop: Block, Date, Type/Hash, Amount, Status */}
+              <th className={`px-4 py-3 font-medium ${isMobileOrTablet ? 'w-20' : 'px-6 py-4'}`}>Block</th>
+              {!isMobileOrTablet && <th className="px-6 py-4 font-medium">Date</th>}
+              <th className={`px-4 py-3 font-medium ${isMobileOrTablet ? '' : 'px-6 py-4'}`}>Type / Hash</th>
+              <th className={`px-4 py-3 font-medium text-right ${isMobileOrTablet ? '' : 'px-6 py-4'}`}>Amount</th>
+              {!isMobileOrTablet && <th className="px-6 py-4 font-medium text-right">Status</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/30">
@@ -218,31 +220,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                 onClick={() => onTxClick?.(tx.txid)}
               >
                 {/* Block Height */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-sm font-mono text-accent-primary">
+                <td className={`px-4 py-3 text-sm font-mono text-accent-primary ${isMobileOrTablet ? '' : 'px-6 py-4'}`}>
                   {tx.height > 0 ? tx.height : <span className="text-accent-warning">Pending</span>}
-                  {/* Mobile date below block height */}
-                  <div className="md:hidden text-[10px] text-text-muted mt-1">
-                    {new Date(tx.timestamp).toLocaleDateString()}
-                  </div>
+                  {/* Mobile/Tablet: date below block height */}
+                  {isMobileOrTablet && (
+                    <div className="text-[10px] text-text-muted mt-1">
+                      {new Date(tx.timestamp).toLocaleDateString()}
+                    </div>
+                  )}
                 </td>
 
-                {/* Date (Desktop) */}
-                <td className="px-4 md:px-6 py-3 md:py-4 hidden md:table-cell">
-                  <div className="flex flex-col">
-                    <span className="text-text-primary text-sm">{new Date(tx.timestamp).toLocaleDateString()}</span>
-                    <span className="text-text-muted text-xs">{new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                </td>
+                {/* Date (Desktop only) */}
+                {!isMobileOrTablet && (
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-text-primary text-sm">{new Date(tx.timestamp).toLocaleDateString()}</span>
+                      <span className="text-text-muted text-xs">{new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </td>
+                )}
 
                 {/* Type & Hash */}
-                <td className="px-4 md:px-6 py-3 md:py-4">
+                <td className={`px-4 py-3 ${isMobileOrTablet ? '' : 'px-6 py-4'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-bg-primary border border-border-color group-hover:border-accent-primary/50 transition-colors hidden md:block`}>
-                      {getIcon(tx.type, tx.tx_type_label)}
-                    </div>
+                    {!isMobileOrTablet && (
+                      <div className="p-2 rounded-lg bg-bg-primary border border-border-color group-hover:border-accent-primary/50 transition-colors">
+                        {getIcon(tx.type, tx.tx_type_label)}
+                      </div>
+                    )}
                     <div className="flex flex-col">
-                      {/* Mobile: Show Type Label prominently */}
-                      <span className="font-medium text-text-primary text-sm md:text-base">
+                      <span className={`font-medium text-text-primary ${isMobileOrTablet ? 'text-sm' : 'text-base'}`}>
                         {getTypeLabel(tx.type, tx.tx_type_label, tx.asset_type)}
                       </span>
                       {/* Hash below */}
@@ -250,55 +257,58 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                         className="font-mono text-xs text-text-secondary group-hover:text-accent-primary transition-colors"
                         title="Click to view details"
                       >
-                        {/* Shorter hash on mobile */}
-                        <span className="md:hidden">{tx.txid.slice(0, 4)}...{tx.txid.slice(-4)}</span>
-                        <span className="hidden md:inline">{tx.txid.slice(0, 8)}...{tx.txid.slice(-6)}</span>
+                        {isMobileOrTablet
+                          ? `${tx.txid.slice(0, 4)}...${tx.txid.slice(-4)}`
+                          : `${tx.txid.slice(0, 8)}...${tx.txid.slice(-6)}`
+                        }
                       </span>
                     </div>
                   </div>
                 </td>
 
                 {/* Amount */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-right">
-                  <span className={`font-mono font-bold text-sm ${tx.type === 'in' ? 'text-accent-success' : 'text-red-500'
-                    }`}>
+                <td className={`px-4 py-3 text-right ${isMobileOrTablet ? '' : 'px-6 py-4'}`}>
+                  <span className={`font-mono font-bold text-sm ${tx.type === 'in' ? 'text-accent-success' : 'text-red-500'}`}>
                     {tx.type === 'in' ? '+' : '-'} {formatSAL(tx.amount)}
                   </span>
-                  {/* Status Badge on Mobile (below amount) */}
-                  <div className="md:hidden mt-1 flex justify-end">
-                    {(() => {
-                      const lockStatus = getTxLockStatus(tx, currentHeight);
-                      if (tx.pending || lockStatus.confirmations === 0 || (tx.type === 'pending')) {
-                        return <span className="text-[10px] text-accent-warning">Pending</span>;
-                      }
-                      if (!lockStatus.isUnlocked) {
-                        return <span className="text-[10px] text-text-muted">{lockStatus.blocksToUnlock} blocks</span>;
-                      }
-                      return null; // Don't show "Confirmed" on mobile list to save space, usually implies successful
-                    })()}
-                  </div>
+                  {/* Status Badge on Mobile/Tablet (below amount) */}
+                  {isMobileOrTablet && (
+                    <div className="mt-1 flex justify-end">
+                      {(() => {
+                        const lockStatus = getTxLockStatus(tx, currentHeight);
+                        if (tx.pending || lockStatus.confirmations === 0 || (tx.type === 'pending')) {
+                          return <span className="text-[10px] text-accent-warning">Pending</span>;
+                        }
+                        if (!lockStatus.isUnlocked) {
+                          return <span className="text-[10px] text-text-muted">{lockStatus.blocksToUnlock} blocks</span>;
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
                 </td>
 
-                {/* Status (Desktop) */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-right hidden md:table-cell">
-                  {(() => {
-                    const lockStatus = getTxLockStatus(tx, currentHeight);
-                    // Check for locally-created pending TX first
-                    if (tx.pending) {
-                      return <Badge variant="warning" className="animate-pulse">Broadcasting...</Badge>;
-                    } else if (lockStatus.isUnlocked) {
-                      return <Badge variant="success">Confirmed</Badge>;
-                    } else if (tx.type === 'pending' || lockStatus.confirmations === 0) {
-                      return <Badge variant="warning">Pending</Badge>;
-                    } else {
-                      return (
-                        <Badge variant="neutral">
-                          {lockStatus.blocksToUnlock} blocks
-                        </Badge>
-                      );
-                    }
-                  })()}
-                </td>
+                {/* Status (Desktop only) */}
+                {!isMobileOrTablet && (
+                  <td className="px-6 py-4 text-right">
+                    {(() => {
+                      const lockStatus = getTxLockStatus(tx, currentHeight);
+                      if (tx.pending) {
+                        return <Badge variant="warning" className="animate-pulse">Broadcasting...</Badge>;
+                      } else if (lockStatus.isUnlocked) {
+                        return <Badge variant="success">Confirmed</Badge>;
+                      } else if (tx.type === 'pending' || lockStatus.confirmations === 0) {
+                        return <Badge variant="warning">Pending</Badge>;
+                      } else {
+                        return (
+                          <Badge variant="neutral">
+                            {lockStatus.blocksToUnlock} blocks
+                          </Badge>
+                        );
+                      }
+                    })()}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -308,12 +318,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border-color pt-4 mt-4 px-4 pb-4">
-          <div className="text-text-muted text-sm hidden md:block">
-            Showing {startIndex + 1}-{Math.min(endIndex, transactions.length)} of {transactions.length} transactions
-          </div>
-          <div className="text-text-muted text-xs md:hidden">
-            Page {currentPage} of {totalPages}
-          </div>
+          {isMobileOrTablet ? (
+            <div className="text-text-muted text-xs">
+              Page {currentPage} of {totalPages}
+            </div>
+          ) : (
+            <div className="text-text-muted text-sm">
+              Showing {startIndex + 1}-{Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Button
@@ -326,34 +339,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
               <ChevronLeft size={18} />
             </Button>
 
-            {/* Page numbers (Desktop only or simple counter mobile) */}
-            <div className="hidden md:flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
+            {/* Page numbers (Desktop only) */}
+            {!isMobileOrTablet && (
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
 
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => goToPage(pageNum)}
-                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${pageNum === currentPage
-                      ? 'bg-accent-primary text-white'
-                      : 'text-text-secondary hover:bg-white/10'
-                      }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${pageNum === currentPage
+                        ? 'bg-accent-primary text-white'
+                        : 'text-text-secondary hover:bg-white/10'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <Button
               variant="ghost"

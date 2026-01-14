@@ -126,13 +126,13 @@ const HistoryPage: React.FC = () => {
    }, [wallet.transactions, searchQuery, filterTypes]);
 
    return (
-      <div className={`animate-fade-in space-y-4 md:p-0 flex flex-col ${isMobileOrTablet
-         ? 'h-full'
-         : 'h-[calc(100vh-7rem)] space-y-6'
+      <div className={`animate-fade-in flex flex-col ${isMobileOrTablet
+         ? 'h-full space-y-4'
+         : 'h-[calc(100vh-7rem)] space-y-6 p-0'
          }`}>
          {/* Layout constrained to viewport */}
          <Card className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 relative z-20">
+            <div className={`flex justify-between mb-6 gap-4 relative z-20 ${isMobileOrTablet ? 'flex-col items-start' : 'flex-row items-center'}`}>
                <div className="flex items-center gap-3">
                   <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
                      <History size={24} />
@@ -145,8 +145,8 @@ const HistoryPage: React.FC = () => {
                   </div>
                </div>
 
-               <div className="flex flex-wrap gap-3 w-full sm:w-auto items-center">
-                  <div className="relative flex-1 sm:flex-none sm:w-64">
+               <div className={`flex flex-wrap gap-3 items-center ${isMobileOrTablet ? 'w-full' : 'w-auto'}`}>
+                  <div className={`relative ${isMobileOrTablet ? 'flex-1' : 'w-64'}`}>
                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                      <input
                         className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-text-muted focus:outline-none focus:border-accent-primary/50 transition-all"
@@ -225,7 +225,7 @@ const HistoryPage: React.FC = () => {
                </div>
             </div>
 
-            <div className="flex-1 overflow-auto -mx-6 px-0 md:px-6 h-full min-h-0">
+            <div className={`flex-1 overflow-auto -mx-6 h-full min-h-0 ${isMobileOrTablet ? 'px-0' : 'px-6'}`}>
                <TransactionList
                   transactions={filteredTransactions}
                   onTxClick={(txId) => setSelectedTxId(txId)}

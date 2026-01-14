@@ -148,14 +148,14 @@ interface OverlayProps {
 export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, children, className = '' }) => {
   if (!isOpen) return null;
 
-  // On mobile/tablet, position below the header; on desktop, use full screen
+  // On mobile/tablet, position below the header and fill the space; on desktop, center with max dimensions
   const containerStyle: React.CSSProperties = isMobileOrTablet
     ? { top: 'calc(56px + env(safe-area-inset-top))', left: 0, right: 0, bottom: 0 }
     : { top: 0, left: 0, right: 0, bottom: 0 };
 
   return (
     <div
-      className={`fixed z-[100] flex justify-center ${isMobileOrTablet ? 'items-center p-4' : 'items-center p-4'}`}
+      className={`fixed z-[100] flex ${isMobileOrTablet ? 'flex-col' : 'justify-center items-center p-4'}`}
       style={containerStyle}
     >
       {/* Backdrop */}
@@ -167,10 +167,10 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
 
       {/* Content */}
       <div
-        className={`relative bg-[#131320] shadow-2xl flex flex-col animate-slide-up ${isMobileOrTablet ? 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[calc(100%-2rem)]' : 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[85vh]'} ${className}`}
+        className={`relative bg-[#131320] shadow-2xl flex flex-col animate-slide-up ${isMobileOrTablet ? 'w-full h-full' : 'w-full max-w-lg rounded-2xl border border-white/10 max-h-[85vh]'} ${className}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 rounded-t-2xl">
+        <div className={`flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 ${isMobileOrTablet ? '' : 'rounded-t-2xl'}`}>
           <h3 className="text-lg font-bold text-white">{title}</h3>
           <button
             onClick={onClose}

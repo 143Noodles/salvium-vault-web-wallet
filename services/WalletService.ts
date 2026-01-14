@@ -740,12 +740,18 @@ export class WalletService {
           const height = tx.block_height || tx.height || 0;
           // Use WASM timestamp if valid, otherwise estimate from block height
           const timestamp = tx.timestamp > 0 ? tx.timestamp * 1000 : this.estimateTimestampFromHeight(height);
+          // For outgoing transactions, use the sum of destination amounts (excludes change back to self)
+          // tx.amount includes change, so prefer destinations if available
+          let outAmount = tx.amount || 0;
+          if (tx.destinations && tx.destinations.length > 0) {
+            outAmount = tx.destinations.reduce((sum: number, dest: any) => sum + (dest.amount || 0), 0);
+          }
           transactions.push({
             txid: tx.txid,
             type: 'out',
             tx_type: txType,
             tx_type_label: this.getTxTypeLabel(txType, 'out'),
-            amount: (tx.amount || 0) / ATOMIC_UNITS,
+            amount: outAmount / ATOMIC_UNITS,
             fee: tx.fee ? tx.fee / ATOMIC_UNITS : undefined,
             timestamp,
             height,
@@ -763,12 +769,17 @@ export class WalletService {
           const txType = tx.tx_type;
           // Pending transactions use current time if no timestamp
           const timestamp = tx.timestamp > 0 ? tx.timestamp * 1000 : Date.now();
+          // For pending (outgoing) transactions, use destination amounts (excludes change back to self)
+          let pendingAmount = tx.amount || 0;
+          if (tx.destinations && tx.destinations.length > 0) {
+            pendingAmount = tx.destinations.reduce((sum: number, dest: any) => sum + (dest.amount || 0), 0);
+          }
           transactions.push({
             txid: tx.txid,
             type: 'pending',
             tx_type: txType,
             tx_type_label: this.getTxTypeLabel(txType, 'pending'),
-            amount: (tx.amount || 0) / ATOMIC_UNITS,
+            amount: pendingAmount / ATOMIC_UNITS,
             fee: tx.fee ? tx.fee / ATOMIC_UNITS : undefined,
             timestamp,
             height: 0,
