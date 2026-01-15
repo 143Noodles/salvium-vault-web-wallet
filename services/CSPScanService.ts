@@ -803,15 +803,7 @@ class CSPScanService {
     // Start Producer
     producer();
 
-    // Consumer Loop (Synchronous-ish on Main Thread)
-    // v5.4.3 FIX: Process batches in HEIGHT ORDER, not arrival order!
-    // This is critical for spent detection - spending txs must be processed
-    // AFTER the outputs they spend, otherwise m_key_images won't have the
-    // key image and the output won't be marked as spent.
-    //
-    // NOTE: Producer fetches batches of 50 chunks at a time. The `start` in 
-    // ingestQueue is the first chunk of each batch. We build expectedBatchStarts
-    // to match those batch starts.
+    // Consumer Loop - process batches in HEIGHT ORDER for correct spent detection
     let processedChunks = 0;
     const totalChunks = sortedChunks.length;
     const startTime = performance.now();
@@ -878,130 +870,148 @@ class CSPScanService {
           const chunkCount = view.getUint32(0, true);
           let offset = 4;
 
-          // OPTIMIZATION: Merge all chunks into a single buffer for one WASM call.
-          // Server returns sparse format with SPR magic header:
-          // - v2: [TxCount:4][Records...] (no header)
-          // - v3/4/5: [SPRx][TxCount:4][Records...] (x = version digit 3, 4, or 5)
-          // We track SPR version to preserve it when merging.
-          let totalTxCountV2 = 0;
-          const txRecordPartsV2: Uint8Array[] = [];
-          let firstHeightV2 = 0;
+          if (isIncremental) {
+            // Incremental: process chunks individually with yields for smooth UI
+            for (let c = 0; c < chunkCount && offset + 8 <= task.data.length; c++) {
+              const chunkStartHeight = view.getUint32(offset, true);
+              offset += 4;
+              const dataSize = view.getUint32(offset, true);
+              offset += 4;
 
-          let totalTxCountSPR = 0;
-          const txRecordPartsSPR: Uint8Array[] = [];
-          let firstHeightSPR = 0;
-          let sprVersion = 0x34;  // Default to SPR4, but will be updated if SPR5 is detected
+              if (dataSize > 4 && offset + dataSize <= task.data.length) {
+                const sparseData = task.data.subarray(offset, offset + dataSize);
 
-          for (let c = 0; c < chunkCount && offset + 8 <= task.data.length; c++) {
-            const chunkStartHeight = view.getUint32(offset, true);
-            offset += 4;
-            const dataSize = view.getUint32(offset, true);
-            offset += 4;
+                const ptr = Module.allocate_binary_buffer(sparseData.length);
+                if (ptr) {
+                  Module.HEAPU8.set(sparseData, ptr);
+                  const resJson = wallet.ingest_sparse_transactions(ptr, sparseData.length, chunkStartHeight, true);
+                  Module.free_binary_buffer(ptr);
 
-            if (dataSize > 4 && offset + dataSize <= task.data.length) {
-              // Each chunk's sparse data:
-              // - v2: [TxCount:4][TxRecords...]
-              // - v3: [SPR3][TxCount:4][TxRecords...] (records include tx_hash)
-              // - v4: [SPR4][TxCount:4][TxRecords...] (same as v3, newer version)
-              // - v5: [SPR5][TxCount:4][TxRecords...] (records include timestamp)
-              const sparseData = task.data.subarray(offset, offset + dataSize);
-              const chunkView = new DataView(sparseData.buffer, sparseData.byteOffset, sparseData.byteLength);
-
-              // Check for SPRx magic header (S, P, R, followed by version digit)
-              const isSPRx =
-                sparseData.length >= 8 &&
-                sparseData[0] === 0x53 && // 'S'
-                sparseData[1] === 0x50 && // 'P'
-                sparseData[2] === 0x52 && // 'R'
-                (sparseData[3] === 0x33 || sparseData[3] === 0x34 || sparseData[3] === 0x35);   // '3', '4', or '5'
-
-              const txCount = isSPRx ? chunkView.getUint32(4, true) : chunkView.getUint32(0, true);
-              const recordOffset = isSPRx ? 8 : 4;
-
-              if (isSPRx) {
-                // Track the highest SPR version we see (SPR5 > SPR4 > SPR3)
-                if (sparseData[3] > sprVersion) {
-                  sprVersion = sparseData[3];
+                  const res = JSON.parse(resJson);
+                  if (res.success) {
+                    totalOutputsFound += res.txs_matched || 0;
+                    if (res.stake_heights) allStakeHeights.push(...res.stake_heights);
+                    if (res.audit_heights) allAuditHeights.push(...res.audit_heights);
+                  }
                 }
-                if (firstHeightSPR === 0) firstHeightSPR = chunkStartHeight;
-                totalTxCountSPR += txCount;
-                if (sparseData.length > recordOffset) {
-                  txRecordPartsSPR.push(sparseData.subarray(recordOffset));
-                }
+                offset += dataSize;
+                await yieldToUI();
               } else {
-                if (firstHeightV2 === 0) firstHeightV2 = chunkStartHeight;
-                totalTxCountV2 += txCount;
-                if (sparseData.length > recordOffset) {
-                  txRecordPartsV2.push(sparseData.subarray(recordOffset));
-                }
-              }
-              offset += dataSize;
-            } else {
-              offset += dataSize;
-            }
-          }
-
-          // Build merged buffer(s) and ingest.
-          // v2 merged: [TotalTxCount:4][AllTxRecords...]
-          if (totalTxCountV2 > 0 && txRecordPartsV2.length > 0) {
-            let totalRecordBytes = 0;
-            for (const part of txRecordPartsV2) totalRecordBytes += part.length;
-
-            const mergedBuffer = new Uint8Array(4 + totalRecordBytes);
-            new DataView(mergedBuffer.buffer).setUint32(0, totalTxCountV2, true);
-            let writeOffset = 4;
-            for (const part of txRecordPartsV2) {
-              mergedBuffer.set(part, writeOffset);
-              writeOffset += part.length;
-            }
-
-            const ptr = Module.allocate_binary_buffer(mergedBuffer.length);
-            if (ptr) {
-              Module.HEAPU8.set(mergedBuffer, ptr);
-              const resJson = wallet.ingest_sparse_transactions(ptr, mergedBuffer.length, firstHeightV2 || 0, true);
-              Module.free_binary_buffer(ptr);
-
-              const res = JSON.parse(resJson);
-              if (res.success) {
-                totalOutputsFound += res.txs_matched || 0;
-                if (res.stake_heights) allStakeHeights.push(...res.stake_heights);
-                if (res.audit_heights) allAuditHeights.push(...res.audit_heights);
-              } else {
-                console.warn(`[CSPScanService] Phase 2: V2 batch ingest failed:`, res);
+                offset += dataSize;
               }
             }
-          }
+          } else {
+            // Full scan: merge chunks for throughput
+            let totalTxCountV2 = 0;
+            const txRecordPartsV2: Uint8Array[] = [];
+            let firstHeightV2 = 0;
 
-          // SPR3/4/5 merged: [SPRx][TotalTxCount:4][AllTxRecords...] where x = detected version
-          if (totalTxCountSPR > 0 && txRecordPartsSPR.length > 0) {
-            let totalRecordBytes = 0;
-            for (const part of txRecordPartsSPR) totalRecordBytes += part.length;
+            let totalTxCountSPR = 0;
+            const txRecordPartsSPR: Uint8Array[] = [];
+            let firstHeightSPR = 0;
+            let sprVersion = 0x34;  // Default to SPR4, but will be updated if SPR5 is detected
 
-            const mergedBuffer = new Uint8Array(8 + totalRecordBytes);
-            mergedBuffer[0] = 0x53; // S
-            mergedBuffer[1] = 0x50; // P
-            mergedBuffer[2] = 0x52; // R
-            mergedBuffer[3] = sprVersion; // Use detected version (0x33, 0x34, or 0x35)
-            new DataView(mergedBuffer.buffer).setUint32(4, totalTxCountSPR, true);
-            let writeOffset = 8;
-            for (const part of txRecordPartsSPR) {
-              mergedBuffer.set(part, writeOffset);
-              writeOffset += part.length;
+            for (let c = 0; c < chunkCount && offset + 8 <= task.data.length; c++) {
+              const chunkStartHeight = view.getUint32(offset, true);
+              offset += 4;
+              const dataSize = view.getUint32(offset, true);
+              offset += 4;
+
+              if (dataSize > 4 && offset + dataSize <= task.data.length) {
+                const sparseData = task.data.subarray(offset, offset + dataSize);
+                const chunkView = new DataView(sparseData.buffer, sparseData.byteOffset, sparseData.byteLength);
+
+                // Check for SPRx magic header (S, P, R, followed by version digit)
+                const isSPRx =
+                  sparseData.length >= 8 &&
+                  sparseData[0] === 0x53 && // 'S'
+                  sparseData[1] === 0x50 && // 'P'
+                  sparseData[2] === 0x52 && // 'R'
+                  (sparseData[3] === 0x33 || sparseData[3] === 0x34 || sparseData[3] === 0x35);
+
+                const txCount = isSPRx ? chunkView.getUint32(4, true) : chunkView.getUint32(0, true);
+                const recordOffset = isSPRx ? 8 : 4;
+
+                if (isSPRx) {
+                  if (sparseData[3] > sprVersion) sprVersion = sparseData[3];
+                  if (firstHeightSPR === 0) firstHeightSPR = chunkStartHeight;
+                  totalTxCountSPR += txCount;
+                  if (sparseData.length > recordOffset) {
+                    txRecordPartsSPR.push(sparseData.subarray(recordOffset));
+                  }
+                } else {
+                  if (firstHeightV2 === 0) firstHeightV2 = chunkStartHeight;
+                  totalTxCountV2 += txCount;
+                  if (sparseData.length > recordOffset) {
+                    txRecordPartsV2.push(sparseData.subarray(recordOffset));
+                  }
+                }
+                offset += dataSize;
+              } else {
+                offset += dataSize;
+              }
             }
 
-            const ptr = Module.allocate_binary_buffer(mergedBuffer.length);
-            if (ptr) {
-              Module.HEAPU8.set(mergedBuffer, ptr);
-              const resJson = wallet.ingest_sparse_transactions(ptr, mergedBuffer.length, firstHeightSPR || 0, true);
-              Module.free_binary_buffer(ptr);
+            // Build merged buffer(s) and ingest
+            if (totalTxCountV2 > 0 && txRecordPartsV2.length > 0) {
+              let totalRecordBytes = 0;
+              for (const part of txRecordPartsV2) totalRecordBytes += part.length;
 
-              const res = JSON.parse(resJson);
-              if (res.success) {
-                totalOutputsFound += res.txs_matched || 0;
-                if (res.stake_heights) allStakeHeights.push(...res.stake_heights);
-                if (res.audit_heights) allAuditHeights.push(...res.audit_heights);
-              } else {
-                console.warn(`[CSPScanService] Phase 2: SPR batch ingest failed:`, res);
+              const mergedBuffer = new Uint8Array(4 + totalRecordBytes);
+              new DataView(mergedBuffer.buffer).setUint32(0, totalTxCountV2, true);
+              let writeOffset = 4;
+              for (const part of txRecordPartsV2) {
+                mergedBuffer.set(part, writeOffset);
+                writeOffset += part.length;
+              }
+
+              const ptr = Module.allocate_binary_buffer(mergedBuffer.length);
+              if (ptr) {
+                Module.HEAPU8.set(mergedBuffer, ptr);
+                const resJson = wallet.ingest_sparse_transactions(ptr, mergedBuffer.length, firstHeightV2 || 0, true);
+                Module.free_binary_buffer(ptr);
+
+                const res = JSON.parse(resJson);
+                if (res.success) {
+                  totalOutputsFound += res.txs_matched || 0;
+                  if (res.stake_heights) allStakeHeights.push(...res.stake_heights);
+                  if (res.audit_heights) allAuditHeights.push(...res.audit_heights);
+                } else {
+                  console.warn(`[CSPScanService] Phase 2: V2 batch ingest failed:`, res);
+                }
+              }
+            }
+
+            if (totalTxCountSPR > 0 && txRecordPartsSPR.length > 0) {
+              let totalRecordBytes = 0;
+              for (const part of txRecordPartsSPR) totalRecordBytes += part.length;
+
+              const mergedBuffer = new Uint8Array(8 + totalRecordBytes);
+              mergedBuffer[0] = 0x53; // S
+              mergedBuffer[1] = 0x50; // P
+              mergedBuffer[2] = 0x52; // R
+              mergedBuffer[3] = sprVersion;
+              new DataView(mergedBuffer.buffer).setUint32(4, totalTxCountSPR, true);
+              let writeOffset = 8;
+              for (const part of txRecordPartsSPR) {
+                mergedBuffer.set(part, writeOffset);
+                writeOffset += part.length;
+              }
+
+              const ptr = Module.allocate_binary_buffer(mergedBuffer.length);
+              if (ptr) {
+                Module.HEAPU8.set(mergedBuffer, ptr);
+                const resJson = wallet.ingest_sparse_transactions(ptr, mergedBuffer.length, firstHeightSPR || 0, true);
+                Module.free_binary_buffer(ptr);
+
+                const res = JSON.parse(resJson);
+                if (res.success) {
+                  totalOutputsFound += res.txs_matched || 0;
+                  if (res.stake_heights) allStakeHeights.push(...res.stake_heights);
+                  if (res.audit_heights) allAuditHeights.push(...res.audit_heights);
+                } else {
+                  console.warn(`[CSPScanService] Phase 2: SPR batch ingest failed:`, res);
+                }
               }
             }
           }
@@ -1011,7 +1021,7 @@ class CSPScanService {
       } else {
         console.warn(`[CSPScanService] Phase 2: Batch ${nextExpectedBatchIdx} has no data (${task.data.length} bytes)`);
       }
-      processedChunks += 50;
+      processedChunks += BATCH_SIZE;
       if (processedChunks > totalChunks) processedChunks = totalChunks;
 
       // Progress Update - Phase 2 (Fetch+Ingest) is 76-90% of overall progress
@@ -1040,11 +1050,7 @@ class CSPScanService {
         });
       }
 
-      // v5.51.0: Improved UI yielding with requestAnimationFrame
-      // Yield more frequently during incremental scans to keep UI responsive
-      const yieldInterval = isIncremental ? 2 : 5; // Every 2 batches for incremental, 5 for full
-      const shouldYield = processedChunks % yieldInterval === 0;
-      if (shouldYield) {
+      if (!isIncremental && processedChunks % 5 === 0) {
         await yieldToUI();
       }
     }
@@ -1220,10 +1226,7 @@ class CSPScanService {
         });
       }
 
-      // v5.51.0: Yield with requestAnimationFrame every 5 batches
-      if (completed % 5 === 0) {
-        await yieldToUI();
-      }
+      if (completed % 2 === 0) await yieldToUI();
     }
 
     return totalOutputsFound;
@@ -1375,10 +1378,7 @@ class CSPScanService {
                 wasmCorrupted = true;
               }
             }
-            // v5.51.0: Yield to UI every 5 chunks using rAF
-            if (c > 0 && c % 5 === 0) {
-              await yieldToUI();
-            }
+            if (c > 0 && c % 2 === 0) await yieldToUI();
           } else {
             offset += dataSize;
           }
@@ -1514,10 +1514,7 @@ class CSPScanService {
                 wasmCorrupted = true;
               }
             }
-            // v5.51.0: Yield to UI every 5 chunks using rAF
-            if (c > 0 && c % 5 === 0) {
-              await yieldToUI();
-            }
+            if (c > 0 && c % 2 === 0) await yieldToUI();
           } else {
             offset += dataSize;
           }
