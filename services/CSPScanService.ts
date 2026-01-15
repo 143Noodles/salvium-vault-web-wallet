@@ -49,19 +49,31 @@ function getOptimalWorkerCount(): number {
 }
 
 /**
- * v5.51.0: Improved UI yield using requestAnimationFrame
- * This yields to the browser's render cycle, allowing smooth UI updates
- * during heavy WASM processing on the main thread.
+ * Yields to the browser's render cycle for smooth UI updates
  */
 function yieldToUI(): Promise<void> {
   return new Promise(resolve => {
-    // requestAnimationFrame syncs with browser's render cycle
-    // This ensures UI gets a chance to paint before we continue
-    requestAnimationFrame(() => {
-      // Use setTimeout(0) after rAF to ensure we're fully yielded
-      setTimeout(resolve, 0);
-    });
+    requestAnimationFrame(() => setTimeout(resolve, 0));
   });
+}
+
+// Time-slicing: track frame start time and yield when budget exceeded
+const FRAME_BUDGET_MS = 12; // Target ~60fps (16.67ms) with headroom
+let frameStartTime = 0;
+
+function startFrame(): void {
+  frameStartTime = performance.now();
+}
+
+function shouldYield(): boolean {
+  return performance.now() - frameStartTime > FRAME_BUDGET_MS;
+}
+
+async function yieldIfNeeded(): Promise<void> {
+  if (shouldYield()) {
+    await yieldToUI();
+    startFrame();
+  }
 }
 
 // Phase 2 Worker management
@@ -871,7 +883,8 @@ class CSPScanService {
           let offset = 4;
 
           if (isIncremental) {
-            // Incremental: process chunks individually with yields for smooth UI
+            // Incremental: process chunks with time-slicing for smooth UI
+            startFrame();
             for (let c = 0; c < chunkCount && offset + 8 <= task.data.length; c++) {
               const chunkStartHeight = view.getUint32(offset, true);
               offset += 4;
@@ -895,7 +908,7 @@ class CSPScanService {
                   }
                 }
                 offset += dataSize;
-                await yieldToUI();
+                await yieldIfNeeded();
               } else {
                 offset += dataSize;
               }
@@ -1185,6 +1198,7 @@ class CSPScanService {
     }
 
     let completed = 0;
+    startFrame();
     for (const batch of batches) {
       let totalSize = 0;
       for (const entry of batch) totalSize += entry.txData.length;
@@ -1226,7 +1240,7 @@ class CSPScanService {
         });
       }
 
-      if (completed % 2 === 0) await yieldToUI();
+      await yieldIfNeeded();
     }
 
     return totalOutputsFound;
@@ -1330,10 +1344,10 @@ class CSPScanService {
         const MAX_CONSECUTIVE_FAILURES = 3;
         let wasmCorrupted = false;
 
+        startFrame();
         for (let c = 0; c < chunkCount && offset + 8 <= data.length; c++) {
-          // If WASM is corrupted, skip remaining chunks
           if (wasmCorrupted) {
-            offset += 8; // Skip header
+            offset += 8;
             const skipSize = view.getUint32(offset - 4, true);
             offset += skipSize;
             continue;
@@ -1359,7 +1373,7 @@ class CSPScanService {
                 if (result.success) {
                   txsMatched += result.txs_matched || 0;
                   txsProcessedTotal += result.txs_processed || 0;
-                  consecutiveFailures = 0; // Reset on success
+                  consecutiveFailures = 0;
                 } else {
                   console.error(`[CSPScanService] 🎰 Sparse ingest failed for chunk at height ${chunkStartHeight}:`, result.error);
                   consecutiveFailures++;
@@ -1372,13 +1386,12 @@ class CSPScanService {
               console.error(`[CSPScanService] 🎰 Chunk ${chunkStartHeight} error (continuing):`, chunkError?.message || chunkError);
               consecutiveFailures++;
 
-              // Check if WASM is corrupted (3+ consecutive failures indicates memory corruption)
               if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                console.warn(`[CSPScanService] ⚠️ WASM memory likely corrupted after ${consecutiveFailures} consecutive failures - stopping Phase 3b to preserve wallet state`);
+                console.warn(`[CSPScanService] ⚠️ WASM memory likely corrupted - stopping Phase 3b`);
                 wasmCorrupted = true;
               }
             }
-            if (c > 0 && c % 2 === 0) await yieldToUI();
+            await yieldIfNeeded();
           } else {
             offset += dataSize;
           }
@@ -1466,10 +1479,10 @@ class CSPScanService {
         const MAX_CONSECUTIVE_FAILURES = 3;
         let wasmCorrupted = false;
 
+        startFrame();
         for (let c = 0; c < chunkCount && offset + 8 <= data.length; c++) {
-          // If WASM is corrupted, skip remaining chunks
           if (wasmCorrupted) {
-            offset += 8; // Skip header
+            offset += 8;
             const skipSize = view.getUint32(offset - 4, true);
             offset += skipSize;
             continue;
@@ -1495,7 +1508,7 @@ class CSPScanService {
                 if (result.success) {
                   txsMatched += result.txs_matched || 0;
                   txsProcessedTotal += result.txs_processed || 0;
-                  consecutiveFailures = 0; // Reset on success
+                  consecutiveFailures = 0;
                 } else {
                   console.error(`[CSPScanService] 🔍 Audit sparse ingest failed for chunk at height ${chunkStartHeight}:`, result.error);
                   consecutiveFailures++;
@@ -1508,13 +1521,12 @@ class CSPScanService {
               console.error(`[CSPScanService] 🔍 Audit chunk ${chunkStartHeight} error (continuing):`, chunkError?.message || chunkError);
               consecutiveFailures++;
 
-              // Check if WASM is corrupted (3+ consecutive failures indicates memory corruption)
               if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                console.warn(`[CSPScanService] ⚠️ WASM memory likely corrupted after ${consecutiveFailures} consecutive failures - stopping Phase 3c to preserve wallet state`);
+                console.warn(`[CSPScanService] ⚠️ WASM memory likely corrupted - stopping Phase 3c`);
                 wasmCorrupted = true;
               }
             }
-            if (c > 0 && c % 2 === 0) await yieldToUI();
+            await yieldIfNeeded();
           } else {
             offset += dataSize;
           }
