@@ -807,6 +807,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 return mergedTxs;
             });
 
+            // CRITICAL: Update wallet's internal blockchain height before getting subaddress balances
+            // Without this, is_transfer_unlocked() uses stale height and returns wrong unlocked balances
+            if (sync.daemonHeight > 0) {
+                walletService.setBlockchainHeight(sync.daemonHeight, true);
+            }
+
             // Get subaddresses with balances from WASM
             const subs = walletService.getSubaddresses();
 
@@ -839,7 +845,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                         index,
                         label: finalLabel,
                         address: sub.address,
-                        balance: sub.balance || 0 // Balance now comes from WASM (already in SAL)
+                        balance: sub.unlocked_balance || 0 // Use UNLOCKED balance for display
                     };
                 });
             });
@@ -1985,7 +1991,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                             index,
                             label: finalLabel,
                             address: sub.address,
-                            balance: sub.balance || 0
+                            balance: sub.unlocked_balance || 0 // Use UNLOCKED balance for display
                         };
                     });
                     setSubaddresses(encryptedWallet.cachedSubaddresses);
