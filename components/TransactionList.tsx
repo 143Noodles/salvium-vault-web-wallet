@@ -201,16 +201,17 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 bg-[#161622] z-10 shadow-sm">
             <tr className="border-b border-border-color/50 text-text-muted text-xs uppercase tracking-wider">
-              {/* Mobile Logic: 
+              {/* Mobile Logic:
                   Explorer shows: Height, Age, Hash, Type, Fee(hide), Outputs(hide), In/Out, Size(hide)
                   We have: Block, Date(Age), Hash, Type, Amount, Status
                   Mobile visible: Block, Hash/Type, Amount
+                  Using lg: breakpoint (1024px) so iPads show mobile view
                */}
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium w-20 md:w-auto">Block</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium hidden md:table-cell">Date</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium">Type / Hash</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium text-right">Amount</th>
-              <th className="px-4 md:px-6 py-3 md:py-4 font-medium text-right hidden md:table-cell">Status</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium w-20 lg:w-auto">Block</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium hidden lg:table-cell">Date</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium">Type / Hash</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right">Amount</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right hidden lg:table-cell">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/30">
