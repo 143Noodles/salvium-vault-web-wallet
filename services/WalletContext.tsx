@@ -334,8 +334,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     // Chart data
     const [walletHistory, setWalletHistory] = useState<ChartDataPoint[]>([]);
 
-    // Price state (fetched from API)
-    const [salPrice, setSalPrice] = useState<number>(0);
+    // Price state (fetched from API) - initialize from cache for instant display
+    const [salPrice, setSalPrice] = useState<number>(() => {
+        try {
+            const cached = localStorage.getItem('salvium_sal_price');
+            return cached ? parseFloat(cached) : 0;
+        } catch {
+            return 0;
+        }
+    });
 
     // Price history for chart (hourly prices from MEXC via Explorer API)
     const [priceHistory, setPriceHistory] = useState<[number, number][]>([]);
@@ -347,7 +354,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 const response = await fetch('https://salvium.tools/api/price');
                 const data = await response.json();
                 if (data.price) {
-                    setSalPrice(parseFloat(data.price));
+                    const price = parseFloat(data.price);
+                    setSalPrice(price);
+                    // Cache price for instant availability on reload/re-render
+                    localStorage.setItem('salvium_sal_price', price.toString());
                 }
             } catch (e) {
                 console.warn('[WalletContext] Failed to fetch price:', e);
@@ -462,10 +472,21 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     // NOTE: balance.balanceSAL already includes active staked amounts (added after scan in onProgress callback)
     // So we don't need to add them again here - just use balance.balanceSAL directly.
     const activeStakedAmount = stakes.filter(s => s.status === 'active').reduce((sum, s) => sum + s.amount, 0);
+
+    // Ensure we always have a valid price for USD calculation
+    const effectivePrice = salPrice > 0 ? salPrice : (() => {
+        try {
+            const cached = localStorage.getItem('salvium_sal_price');
+            return cached ? parseFloat(cached) : 0;
+        } catch {
+            return 0;
+        }
+    })();
+
     const stats: WalletStats = {
         balance: balance.balanceSAL, // Total balance (already includes active stakes from scan completion)
         unlockedBalance: balance.unlockedBalanceSAL, // Excludes staked (they're locked)
-        balanceUsd: balance.balanceSAL * salPrice,
+        balanceUsd: balance.balanceSAL * effectivePrice,
         staked: activeStakedAmount,
         rewards: stakes.reduce((sum, s) => sum + s.rewards, 0),
         dailyChange: 0 // Would need price history
