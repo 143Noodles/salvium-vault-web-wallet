@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
 import { ArrowUpRight, ArrowDownLeft, Layers, Clock, ChevronLeft, ChevronRight } from './Icons';
 import { Badge, Button } from './UIComponents';
@@ -65,6 +66,7 @@ const getTxLockStatus = (tx: WalletTransaction, currentHeight: number): {
 };
 
 const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = false, transactions: propTransactions, onTxClick }) => {
+  const { t, i18n } = useTranslation();
   const wallet = useWallet();
   const transactions = propTransactions || wallet.transactions; // Use prop or wallet default
   const currentHeight = wallet.syncStatus.walletHeight || 0;
@@ -106,9 +108,17 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
   };
 
   const getTypeLabel = (type: string, txTypeLabel?: string, assetType?: string) => {
-    // Build label from tx_type_label if available
-    // Note: asset type suffix removed per user preference
-    return txTypeLabel || (type === 'in' ? 'Received' : type === 'out' ? 'Sent' : 'Pending');
+    // Translate tx_type_label if available
+    if (txTypeLabel) {
+      const labelKey = txTypeLabel.toLowerCase();
+      const translationKey = `transactions.types.${labelKey}`;
+      // Check if translation exists, otherwise return original label
+      const translated = t(translationKey, { defaultValue: '' });
+      if (translated) return translated;
+      return txTypeLabel; // Fallback to original if no translation
+    }
+    // Fallback to basic type
+    return type === 'in' ? t('transactions.received') : type === 'out' ? t('transactions.sent') : t('transactions.pending');
   };
 
   const getTypeBadgeColor = (txTypeLabel?: string) => {
@@ -127,8 +137,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
         <div className={`p-4 bg-white/5 rounded-full mb-4 ${compact ? 'scale-75' : ''}`}>
           <Layers size={compact ? 24 : 32} className="text-text-muted" />
         </div>
-        <p className="text-text-secondary font-medium mb-1">No transactions yet</p>
-        {!compact && <p className="text-text-muted text-sm">Your transaction history will appear here</p>}
+        <p className="text-text-secondary font-medium mb-1">{t('transactions.noTransactions')}</p>
+        {!compact && <p className="text-text-muted text-sm">{t('history.startSending')}</p>}
       </div>
     );
   }
@@ -152,7 +162,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
               <div className="flex flex-col">
                 <span className="font-bold text-sm text-text-primary">{getTypeLabel(tx.type, tx.tx_type_label, tx.asset_type)}</span>
                 <span className="text-[10px] text-text-muted">
-                  {tx.height ? `#${tx.height}` : 'Pending'} • {new Date(tx.timestamp).toLocaleDateString()}
+                  {tx.height ? `#${tx.height}` : t('transactions.pending')} • {new Date(tx.timestamp).toLocaleDateString(i18n.language)}
                 </span>
               </div>
             </div>
@@ -166,15 +176,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                 const lockStatus = getTxLockStatus(tx, currentHeight);
                 // Check for locally-created pending TX first
                 if (tx.pending) {
-                  return <Badge variant="warning" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto animate-pulse">Broadcasting...</Badge>;
+                  return <Badge variant="warning" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto animate-pulse">{t('transactions.broadcasting')}</Badge>;
                 } else if (lockStatus.isUnlocked) {
-                  return <Badge variant="success" className="text-[9px] px-1.5 py-0.5 h-fit ml-auto font-semibold tracking-wide uppercase scale-95 origin-right">Confirmed</Badge>;
+                  return <Badge variant="success" className="text-[9px] px-1.5 py-0.5 h-fit ml-auto font-semibold tracking-wide uppercase scale-95 origin-right">{t('transactions.confirmed')}</Badge>;
                 } else if (tx.type === 'pending' || lockStatus.confirmations === 0) {
-                  return <Badge variant="warning" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto">Pending</Badge>;
+                  return <Badge variant="warning" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto">{t('transactions.pending')}</Badge>;
                 } else {
                   return (
                     <Badge variant="neutral" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto">
-                      {lockStatus.blocksToUnlock} blocks
+                      {t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}
                     </Badge>
                   );
                 }
@@ -185,7 +195,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
         {currentPage < totalPages && (
           <div className="text-center pt-2">
             <button onClick={() => goToPage(currentPage + 1)} className="text-xs text-text-muted hover:text-white transition-colors">
-              Load More
+              {t('transactions.loadMore')}
             </button>
           </div>
         )}
@@ -207,11 +217,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                   Mobile visible: Block, Hash/Type, Amount
                   Using lg: breakpoint (1024px) so iPads show mobile view
                */}
-              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium w-20 lg:w-auto">Block</th>
-              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium hidden lg:table-cell">Date</th>
-              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium">Type / Hash</th>
-              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right">Amount</th>
-              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right hidden lg:table-cell">Status</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium w-20 lg:w-auto">{t('transactions.block')}</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium hidden lg:table-cell">{t('transactions.date')}</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium">{t('transactions.typeHash')}</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right">{t('transactions.amount')}</th>
+              <th className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-right hidden lg:table-cell">{t('transactions.status')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-color/30">
@@ -223,18 +233,18 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
               >
                 {/* Block Height */}
                 <td className="px-4 lg:px-6 py-3 lg:py-4 text-sm font-mono text-accent-primary">
-                  {tx.height > 0 ? tx.height : <span className="text-accent-warning">Pending</span>}
+                  {tx.height > 0 ? tx.height : <span className="text-accent-warning">{t('transactions.pending')}</span>}
                   {/* Mobile date below block height */}
                   <div className="lg:hidden text-[10px] text-text-muted mt-1">
-                    {new Date(tx.timestamp).toLocaleDateString()}
+                    {new Date(tx.timestamp).toLocaleDateString(i18n.language)}
                   </div>
                 </td>
 
                 {/* Date (Desktop) */}
                 <td className="px-4 lg:px-6 py-3 lg:py-4 hidden lg:table-cell">
                   <div className="flex flex-col">
-                    <span className="text-text-primary text-sm">{new Date(tx.timestamp).toLocaleDateString()}</span>
-                    <span className="text-text-muted text-xs">{new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-text-primary text-sm">{new Date(tx.timestamp).toLocaleDateString(i18n.language)}</span>
+                    <span className="text-text-muted text-xs">{new Date(tx.timestamp).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </td>
 
@@ -273,10 +283,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                     {(() => {
                       const lockStatus = getTxLockStatus(tx, currentHeight);
                       if (tx.pending || lockStatus.confirmations === 0 || (tx.type === 'pending')) {
-                        return <span className="text-[10px] text-accent-warning">Pending</span>;
+                        return <span className="text-[10px] text-accent-warning">{t('transactions.pending')}</span>;
                       }
                       if (!lockStatus.isUnlocked) {
-                        return <span className="text-[10px] text-text-muted">{lockStatus.blocksToUnlock} blocks</span>;
+                        return <span className="text-[10px] text-text-muted">{t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}</span>;
                       }
                       return null; // Don't show "Confirmed" on mobile list to save space, usually implies successful
                     })()}
@@ -289,15 +299,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                     const lockStatus = getTxLockStatus(tx, currentHeight);
                     // Check for locally-created pending TX first
                     if (tx.pending) {
-                      return <Badge variant="warning" className="animate-pulse">Broadcasting...</Badge>;
+                      return <Badge variant="warning" className="animate-pulse">{t('transactions.broadcasting')}</Badge>;
                     } else if (lockStatus.isUnlocked) {
-                      return <Badge variant="success">Confirmed</Badge>;
+                      return <Badge variant="success">{t('transactions.confirmed')}</Badge>;
                     } else if (tx.type === 'pending' || lockStatus.confirmations === 0) {
-                      return <Badge variant="warning">Pending</Badge>;
+                      return <Badge variant="warning">{t('transactions.pending')}</Badge>;
                     } else {
                       return (
                         <Badge variant="neutral">
-                          {lockStatus.blocksToUnlock} blocks
+                          {t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}
                         </Badge>
                       );
                     }
@@ -313,10 +323,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
       {totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border-color pt-4 mt-4 px-4 pb-4">
           <div className="text-text-muted text-sm hidden lg:block">
-            Showing {startIndex + 1}-{Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+            {t('transactions.showing', { start: startIndex + 1, end: Math.min(endIndex, transactions.length), total: transactions.length })}
           </div>
           <div className="text-text-muted text-xs lg:hidden">
-            Page {currentPage} of {totalPages}
+            {t('transactions.page', { current: currentPage, total: totalPages })}
           </div>
 
           <div className="flex items-center gap-2">

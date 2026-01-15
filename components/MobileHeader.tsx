@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TabView } from '../App';
 import { useWallet } from '../services/WalletContext';
 import { Settings, Lock, X, Activity, Server, Database } from './Icons';
@@ -17,6 +18,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
     // Show on mobile and tablet, hide only on desktop
     if (isDesktopOnly) return null;
 
+    const { t } = useTranslation();
     const [showNetworkModal, setShowNetworkModal] = useState(false);
     const wallet = useWallet();
 
@@ -54,7 +56,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                     >
                         <div className={`w-1.5 h-1.5 rounded-full ${!isConnected ? 'bg-red-500' : isSynced ? 'bg-accent-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-accent-warning'} ${isSynced ? 'animate-pulse' : ''}`}></div>
                         <span className="text-[10px] font-medium text-text-muted">
-                            {!isConnected ? 'Error' : isSynced ? 'Synced' : 'Syncing'}
+                            {!isConnected ? t('network.error') : isSynced ? t('network.synced') : t('network.syncing')}
                         </span>
                     </div>
 
@@ -85,7 +87,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                                 <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
                                     <Activity size={20} />
                                 </div>
-                                <h3 className="font-bold text-white text-lg">Network Status</h3>
+                                <h3 className="font-bold text-white text-lg">{t('network.status')}</h3>
                             </div>
                             <button onClick={() => setShowNetworkModal(false)} className="p-2 text-text-muted hover:text-white bg-white/5 rounded-full">
                                 <X size={18} />
@@ -98,9 +100,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${isSynced ? 'bg-accent-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-accent-warning'}`}></div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs text-text-muted uppercase tracking-wider">Status</span>
+                                        <span className="text-xs text-text-muted uppercase tracking-wider">{t('transactions.status')}</span>
                                         <span className={`font-semibold ${isSynced ? 'text-accent-success' : 'text-accent-warning'}`}>
-                                            {isSynced ? 'Fully Synced' : isConnected ? 'Syncing...' : 'Disconnected'}
+                                            {isSynced ? t('network.fullySynced') : isConnected ? t('network.syncing') + '...' : t('network.disconnected')}
                                         </span>
                                     </div>
                                 </div>
@@ -116,14 +118,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                                 <div className="p-3 bg-black/20 rounded-xl border border-white/5">
                                     <div className="flex items-center gap-2 mb-2 text-text-muted shrink-0">
                                         <Database size={14} />
-                                        <span className="text-xs uppercase tracking-wider">Wallet Height</span>
+                                        <span className="text-xs uppercase tracking-wider">{t('network.walletHeight')}</span>
                                     </div>
                                     <p className="font-mono text-xl text-white font-bold">{wallet.syncStatus.walletHeight.toLocaleString()}</p>
                                 </div>
                                 <div className="p-3 bg-black/20 rounded-xl border border-white/5">
                                     <div className="flex items-center gap-2 mb-2 text-text-muted shrink-0">
                                         <Server size={14} />
-                                        <span className="text-xs uppercase tracking-wider">Daemon Height</span>
+                                        <span className="text-xs uppercase tracking-wider">{t('network.daemonHeight')}</span>
                                     </div>
                                     <p className="font-mono text-xl text-white font-bold">{wallet.syncStatus.daemonHeight.toLocaleString()}</p>
                                 </div>
@@ -131,7 +133,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                         </div>
 
                         <div className="pt-2 text-center text-xs text-text-muted">
-                            {isConnected ? 'Connected to Salvium Network' : 'Attempting to connect...'}
+                            {isConnected ? t('network.connectedTo') : t('network.attemptingConnect')}
                         </div>
                     </div>
                 </div>

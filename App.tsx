@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WalletProvider, useWallet, WalletStats } from './services/WalletContext';
 import Dashboard from './components/Dashboard';
 import Onboarding from './components/Onboarding';
@@ -50,6 +51,7 @@ const APP_VERSION = '4.0.0-new-ui';
 type AppState = 'initializing' | 'setup' | 'loading' | 'dashboard' | 'locked';
 
 const AppContent: React.FC = () => {
+  const { t } = useTranslation();
   const wallet = useWallet();
   useMobileScaling();
 
@@ -486,12 +488,12 @@ const AppContent: React.FC = () => {
           <aside className="flex flex-col w-72 fixed h-full z-20 border-r border-border-color bg-[#0f0f1a]">
 
             <nav className="py-4 flex flex-col justify-start pt-8 space-y-1">
-              <NavItem tab={TabView.DASHBOARD} icon={LayoutDashboard} label="Dashboard" />
-              <NavItem tab={TabView.SEND} icon={Send} label="Send" />
-              <NavItem tab={TabView.RECEIVE} icon={Download} label="Receive" />
-              <NavItem tab={TabView.STAKING} icon={TrendingUp} label="Staking" />
-              <NavItem tab={TabView.HISTORY} icon={History} label="History" />
-              <NavItem tab={TabView.SETTINGS} icon={Settings} label="Settings" />
+              <NavItem tab={TabView.DASHBOARD} icon={LayoutDashboard} label={t('navigation.dashboard')} />
+              <NavItem tab={TabView.SEND} icon={Send} label={t('navigation.send')} />
+              <NavItem tab={TabView.RECEIVE} icon={Download} label={t('navigation.receive')} />
+              <NavItem tab={TabView.STAKING} icon={TrendingUp} label={t('navigation.staking')} />
+              <NavItem tab={TabView.HISTORY} icon={History} label={t('navigation.history')} />
+              <NavItem tab={TabView.SETTINGS} icon={Settings} label={t('navigation.settings')} />
             </nav>
 
             <div className="mt-auto p-6 pb-20 space-y-4">
@@ -500,18 +502,18 @@ const AppContent: React.FC = () => {
                 className="flex items-center justify-center gap-2 text-sm font-medium text-text-muted hover:text-white transition-colors w-full px-2"
               >
                 <Lock size={16} />
-                <span>Lock Wallet</span>
+                <span>{t('navigation.lockWallet')}</span>
               </button>
 
               <div className="bg-[#151525] p-4 rounded-xl border border-white/5 shadow-inner-light">
                 <div className="flex items-center gap-2.5 mb-2">
                   <Cpu size={16} className="text-text-muted" />
-                  <span className="text-sm font-medium text-text-secondary">Network Status</span>
+                  <span className="text-sm font-medium text-text-secondary">{t('network.status')}</span>
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-base font-bold text-white tracking-tight">
-                    {!isConnected ? 'Error' : isSynced ? 'Synced' : 'Syncing'}
+                    {!isConnected ? t('network.error') : isSynced ? t('network.synced') : t('network.syncing')}
                   </span>
 
                   <div className={`relative flex items-center justify-center w-6 h-6 rounded-full bg-white/5 border border-white/5 ${isSynced ? 'shadow-[0_0_10px_rgba(16,185,129,0.2)]' : ''}`}>
@@ -520,7 +522,7 @@ const AppContent: React.FC = () => {
                 </div>
 
                 <div className="text-xs font-mono text-text-muted">
-                  Height: <span className="text-text-secondary font-bold">{wallet.syncStatus.walletHeight.toLocaleString()}</span> / {wallet.syncStatus.daemonHeight.toLocaleString()}
+                  {t('network.height')}: <span className="text-text-secondary font-bold">{wallet.syncStatus.walletHeight.toLocaleString()}</span> / {wallet.syncStatus.daemonHeight.toLocaleString()}
                 </div>
               </div>
             </div>

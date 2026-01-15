@@ -1,4 +1,5 @@
 import React, { useState, lazy, Suspense, Component, ErrorInfo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 import { QRCodeSVG as QRCodeDirect } from 'qrcode.react';
 
@@ -41,6 +42,7 @@ import { formatSAL } from '../utils/format';
 import salLogo from '../assets/img/salvium.png';
 
 const ReceivePage: React.FC = () => {
+   const { t } = useTranslation();
    const wallet = useWallet();
    const [newSubaddressLabel, setNewSubaddressLabel] = useState('');
    const [isCreating, setIsCreating] = useState(false);
@@ -96,7 +98,7 @@ const ReceivePage: React.FC = () => {
          <div className="relative mb-4 flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-[0.875rem] h-[0.875rem]" />
             <Input
-               placeholder="Search subaddresses..."
+               placeholder={t('receive.searchSubaddresses')}
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
                className="pl-9 pr-4 py-3"
@@ -105,7 +107,7 @@ const ReceivePage: React.FC = () => {
          <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-0">
             {filteredSubaddresses.length === 0 ? (
                <div className="text-center py-8">
-                  <p className="text-text-muted text-sm">No subaddresses found</p>
+                  <p className="text-text-muted text-sm">{t('receive.noSubaddresses')}</p>
                </div>
             ) : (
                filteredSubaddresses.map((sub: any) => (
@@ -119,7 +121,7 @@ const ReceivePage: React.FC = () => {
                      <p className="font-mono text-xs text-text-muted break-all mb-3">{sub.address}</p>
                      <div className="flex items-center justify-between">
                         <span className="text-xs text-text-secondary">
-                           Unlocked Balance: <span className="text-white font-mono">{formatSAL(sub.balance || 0)} SAL</span>
+                           {t('receive.unlockedBalance')}: <span className="text-white font-mono">{formatSAL(sub.balance || 0)} SAL</span>
                         </span>
                         <Button
                            variant="ghost"
@@ -130,12 +132,12 @@ const ReceivePage: React.FC = () => {
                            {copiedAddress === sub.address ? (
                               <>
                                  <Check className="mr-1.5 w-3 h-3 animate-scale-in" />
-                                 Copied!
+                                 {t('common.copied')}
                               </>
                            ) : (
                               <>
                                  <Copy className="mr-1.5 w-3 h-3" />
-                                 Copy
+                                 {t('common.copy')}
                               </>
                            )}
                         </Button>
@@ -148,7 +150,7 @@ const ReceivePage: React.FC = () => {
             <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
                <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
                   <Plus className="mr-2 w-4 h-4" />
-                  Add New Subaddress
+                  {t('receive.addNewSubaddress')}
                </Button>
             </div>
          )}
@@ -168,13 +170,13 @@ const ReceivePage: React.FC = () => {
                   <div className="w-full px-4 lg:hidden mb-10">
                      <Button variant="secondary" className="w-full py-4" onClick={() => setIsSubaddressOpen(true)}>
                         <Layers className="mr-2 w-[1.125rem] h-[1.125rem]" />
-                        Manage Subaddresses
+                        {t('receive.manageSubaddresses')}
                      </Button>
                   </div>
                )}
 
-               <h2 className="text-2xl font-bold text-white mb-2">Receive Assets</h2>
-               <p className="text-text-muted text-sm mb-10">Scan to send SAL to this wallet.</p>
+               <h2 className="text-2xl font-bold text-white mb-2">{t('receive.title')}</h2>
+               <p className="text-text-muted text-sm mb-10">{t('receive.subtitle')}</p>
 
                <div className="relative group mb-10">
                   <div className="absolute -inset-4 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
@@ -183,7 +185,7 @@ const ReceivePage: React.FC = () => {
                      <div className="w-[14rem] h-[14rem]">
                         <QRCodeErrorBoundary fallback={
                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs text-center p-4">
-                              <span>QR code unavailable.<br/>Copy address below.</span>
+                              <span>{t('receive.qrUnavailable')}</span>
                            </div>
                         }>
                            {isMobileOrTablet ? (
@@ -236,7 +238,7 @@ const ReceivePage: React.FC = () => {
                   {/* Address Display (Sexy Glass) - Full Width */}
                   <div className="group/addr cursor-pointer w-full" onClick={() => copyToClipboard(primaryAddress)}>
                      <div className="flex justify-between items-center mb-2 px-1">
-                        <p className="text-text-secondary uppercase tracking-widest font-bold text-xs">Primary Address</p>
+                        <p className="text-text-secondary uppercase tracking-widest font-bold text-xs">{t('receive.primaryAddress')}</p>
                      </div>
                      <div className="bg-black/30 rounded-xl p-3.5 border border-white/10 backdrop-blur-md group-hover/addr:border-accent-primary/50 group-hover/addr:bg-black/50 transition-all duration-300 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-accent-primary/0 via-accent-primary/5 to-accent-primary/0 translate-x-[-100%] group-hover/addr:translate-x-[100%] transition-transform duration-1000"></div>
@@ -260,12 +262,12 @@ const ReceivePage: React.FC = () => {
                         {copiedAddress === primaryAddress ? (
                            <>
                               <Check className="mr-2 w-[1.125rem] h-[1.125rem] animate-scale-in" />
-                              Copied!
+                              {t('common.copied')}
                            </>
                         ) : (
                            <>
                               <Copy className="mr-2 w-[1.125rem] h-[1.125rem]" />
-                              Copy Address
+                              {t('receive.copyAddress')}
                            </>
                         )}
                      </Button>
@@ -283,7 +285,7 @@ const ReceivePage: React.FC = () => {
                         <div className="p-1.5 bg-accent-primary/10 rounded-lg">
                            <QrCode className="text-accent-primary w-[1.125rem] h-[1.125rem]" />
                         </div>
-                        Subaddresses
+                        {t('receive.subaddresses')}
                      </h3>
                   </div>
                   <SubaddressList />
@@ -292,7 +294,7 @@ const ReceivePage: React.FC = () => {
          )}
 
          {/* OVERLAY for Subaddresses on Mobile */}
-         <Overlay isOpen={isSubaddressOpen} onClose={() => setIsSubaddressOpen(false)} title="Manage Subaddresses">
+         <Overlay isOpen={isSubaddressOpen} onClose={() => setIsSubaddressOpen(false)} title={t('receive.manageSubaddresses')}>
             <button
                onClick={openAddModal}
                className="fixed bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
@@ -308,7 +310,7 @@ const ReceivePage: React.FC = () => {
                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAddSubaddressModalOpen(false)}></div>
                <div className="bg-[#191928] border border-border-color rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative z-10">
                   <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                     <h3 className="font-bold text-lg text-white">Add New Subaddress</h3>
+                     <h3 className="font-bold text-lg text-white">{t('receive.addNewSubaddress')}</h3>
                      <button onClick={() => setIsAddSubaddressModalOpen(false)} className="text-text-muted hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                      </button>
@@ -316,9 +318,9 @@ const ReceivePage: React.FC = () => {
 
                   <div className="p-6 space-y-4">
                      <div className="space-y-2">
-                        <label className="text-sm text-text-secondary">Label</label>
+                        <label className="text-sm text-text-secondary">{t('receive.label')}</label>
                         <Input
-                           placeholder="e.g. Savings Account"
+                           placeholder={t('receive.labelPlaceholder')}
                            value={newSubaddressLabel}
                            onChange={(e) => setNewSubaddressLabel(e.target.value)}
                            autoFocus
@@ -327,9 +329,9 @@ const ReceivePage: React.FC = () => {
                   </div>
 
                   <div className="p-6 border-t border-white/5 flex justify-end gap-3">
-                     <Button variant="ghost" onClick={() => setIsAddSubaddressModalOpen(false)}>Cancel</Button>
+                     <Button variant="ghost" onClick={() => setIsAddSubaddressModalOpen(false)}>{t('common.cancel')}</Button>
                      <Button onClick={handleCreateSubaddress} disabled={isCreating || !newSubaddressLabel.trim()}>
-                        {isCreating ? 'Creating...' : 'Add Subaddress'}
+                        {isCreating ? t('receive.creating') : t('receive.addSubaddress')}
                      </Button>
                   </div>
                </div>

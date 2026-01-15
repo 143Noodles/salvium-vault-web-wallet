@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, Button, Input } from './UIComponents';
 import { Lock, ArrowUpRight, LogOut, Loader2, ScanFace } from './Icons';
 import { useWallet } from '../services/WalletContext';
@@ -10,6 +11,7 @@ interface LockScreenProps {
 }
 
 const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
+  const { t } = useTranslation();
   const wallet = useWallet();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -40,7 +42,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
         if (success) {
           onUnlock();
         } else {
-          setError('Biometric unlock failed: Password changed?');
+          setError(t('lockScreen.biometricFailed'));
         }
       }
     } catch (err) {
@@ -53,7 +55,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) {
-      setError('Please enter your password');
+      setError(t('lockScreen.pleaseEnterPassword'));
       return;
     }
 
@@ -64,11 +66,11 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
       if (success) {
         onUnlock();
       } else {
-        setError('Incorrect password');
+        setError(t('lockScreen.incorrectPassword'));
       }
     } catch (err: any) {
       console.error('Unlock failed:', err);
-      setError(err.message || 'Failed to unlock wallet');
+      setError(err.message || t('errors.failedToUnlock'));
     } finally {
       setIsLoading(false);
     }
@@ -98,8 +100,8 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Wallet Locked</h2>
-              <p className="text-text-muted text-sm">Enter your password to access your dashboard.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('lockScreen.title')}</h2>
+              <p className="text-text-muted text-sm">{t('lockScreen.description')}</p>
             </div>
 
             <form onSubmit={handleUnlock} className="w-full space-y-4">
@@ -109,7 +111,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
                   id="password"
                   name="password"
                   className="font-mono tracking-widest placeholder:font-sans placeholder:tracking-normal"
-                  placeholder="Enter password"
+                  placeholder={t('lockScreen.enterPassword')}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -129,11 +131,11 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
                 {isLoading ? (
                   <>
                     <Loader2 size={18} className="mr-2 animate-spin" />
-                    Unlocking...
+                    {t('lockScreen.unlocking')}
                   </>
                 ) : (
                   <>
-                    Unlock Wallet
+                    {t('lockScreen.unlock')}
                     <ArrowUpRight size={18} className="ml-2" />
                   </>
                 )}
@@ -148,7 +150,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
                   disabled={isLoading}
                 >
                   <ScanFace size={18} className="mr-2" />
-                  Unlock with Biometrics
+                  {t('lockScreen.biometricUnlock')}
                 </Button>
               )}
             </form>
@@ -161,7 +163,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
                 disabled={isLoading}
               >
                 <LogOut size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-                Reset Wallet (Log Out)
+                {t('lockScreen.resetWallet')}
               </button>
             </div>
           </div>

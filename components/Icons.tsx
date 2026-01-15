@@ -56,7 +56,8 @@ import {
   ExternalLink,
   Camera,
   Zap,
-  Heart
+  Heart,
+  Globe
 } from 'lucide-react';
 
 export {
@@ -116,5 +117,6 @@ export {
   ExternalLink,
   Camera,
   Zap,
-  Heart
+  Heart,
+  Globe
 };

@@ -1722,9 +1722,29 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                     const hasNewTxs = newlyFoundTxs.length > 0;
                     const duplicatesFiltered = newTxs.length - newlyFoundTxs.length;
 
-                    if (wasRestoredFromVault) {
-                        // VAULT RESTORE: WASM has imported the full cache, so its balance is authoritative
-                        // Don't use cached balance from vault file which may have errors
+                    // SAFETY CHECK: Scan found outputs but newlyFoundTxs filter says nothing new?
+                    // This can happen after browser tab sleep where WASM state diverges from cache.
+                    // Only trust WASM if its balance >= cached (ensures we have full state, not just partial scan)
+                    const scanFoundOutputsButFilterEmpty = (result.outputsFound || 0) > 0 && !hasNewTxs;
+                    const wasmHasFullState = currentBalance.balance >= (cachedBalance?.balance || 0);
+                    const shouldTrustWasmFromSleepWake = scanFoundOutputsButFilterEmpty && wasmHasFullState;
+                    const wasmLostState = scanFoundOutputsButFilterEmpty && !wasmHasFullState;
+
+                    if (shouldTrustWasmFromSleepWake) {
+                        console.warn(`[WalletContext] ⚠️ Scan found ${result.outputsFound} outputs but newlyFoundTxs is empty - trusting WASM balance (${currentBalance.balance} >= cached ${cachedBalance?.balance || 0})`);
+                    }
+
+                    if (wasmLostState) {
+                        // WASM lost state during browser sleep - balance is incomplete
+                        // Trigger full rescan to recover correct balance
+                        console.warn(`[WalletContext] ⚠️ WASM state lost (balance ${currentBalance.balance} < cached ${cachedBalance?.balance || 0}) - triggering full rescan`);
+                        needsFullRescanRef.current = true;
+                    }
+
+                    if (wasRestoredFromVault || shouldTrustWasmFromSleepWake) {
+                        // WASM balance is authoritative when:
+                        // 1. Vault restore: WASM has imported full cache
+                        // 2. Sleep/wake mismatch: scan found outputs, filter empty, but WASM balance >= cached
                         finalBalance = currentBalance;
                     } else if (isIncrementalScan && cachedBalance && cachedBalance.balance > 0) {
                         // INCREMENTAL SCAN after page reload or backup restore

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -32,6 +33,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
+   const { t } = useTranslation();
    const [hideBalance, setHideBalance] = useState(false);
    const [copied, setCopied] = useState(false);
    const wallet = useWallet();
@@ -118,7 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         <div className="p-2 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-lg text-white">
                            <Wallet size={20} className="w-5 h-5" />
                         </div>
-                        <h3 className="text-base font-bold text-white">Balance</h3>
+                        <h3 className="text-base font-bold text-white">{t('dashboard.balance')}</h3>
                      </div>
                      <button
                         onClick={() => setHideBalance(!hideBalance)}
@@ -144,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         <div className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
                            <Unlock size={12} className="text-text-secondary" />
                            <p className={`font-medium text-text-secondary text-xs whitespace-nowrap ${!isMobileOrTablet ? 'md:text-[min(3.5cqh,0.75rem)]' : ''}`}>
-                              Unlocked: <span className="text-white font-mono">{hideBalance ? '****' : formatSAL(Math.floor(unlockedBalance * 1000) / 1000) + ' SAL'}</span>
+                              {t('dashboard.unlocked')}: <span className="text-white font-mono">{hideBalance ? '****' : formatSAL(Math.floor(unlockedBalance * 1000) / 1000) + ' SAL'}</span>
                            </p>
                         </div>
                         <span className={`text-text-muted text-xs ${!isMobileOrTablet ? 'md:text-[min(3.5cqh,0.75rem)]' : ''}`}>|</span>
@@ -163,7 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         {/* Address Display (Sexy Glass) - Full Width */}
                         <div className="group/addr cursor-pointer w-full" onClick={copyToClipboard}>
                            <div className="flex justify-between items-center mb-2 px-1">
-                              <p className="text-text-secondary uppercase tracking-widest font-bold text-xs">Primary Address</p>
+                              <p className="text-text-secondary uppercase tracking-widest font-bold text-xs">{t('dashboard.primaryAddress')}</p>
                            </div>
                            <div className="bg-black/30 rounded-xl p-3.5 border border-white/10 backdrop-blur-md group-hover/addr:border-accent-primary/50 group-hover/addr:bg-black/50 transition-all duration-300 relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-accent-primary/0 via-accent-primary/5 to-accent-primary/0 translate-x-[-100%] group-hover/addr:translate-x-[100%] transition-transform duration-1000"></div>
@@ -185,11 +187,11 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         <div className="flex gap-3">
                            <Button className="flex-1 px-8 shadow-indigo-500/20 hover:shadow-indigo-500/40 py-2.5 h-auto" onClick={() => onNavigate(TabView.SEND)}>
                               <ArrowUpRight size={18} className="mr-2" />
-                              Send
+                              {t('navigation.send')}
                            </Button>
                            <Button variant="secondary" className="flex-1 px-8 bg-white/5 hover:bg-white/10 border-white/10 py-2.5 h-auto" onClick={() => onNavigate(TabView.RECEIVE)}>
                               <ArrowDownLeft size={18} className="mr-2" />
-                              Receive
+                              {t('navigation.receive')}
                            </Button>
                         </div>
 
@@ -213,10 +215,10 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         <div className="p-2 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-lg text-white">
                            <Layers size={20} className="w-5 h-5" />
                         </div>
-                        <h3 className="font-bold text-white text-base">Active Stakes</h3>
+                        <h3 className="font-bold text-white text-base">{t('dashboard.activeStakes')}</h3>
                      </div>
                      <div className="px-2 py-1 rounded bg-accent-primary/10 border border-accent-primary/20 text-accent-primary font-bold text-xs">
-                        {currentApy !== null ? `~${currentApy.toFixed(1)}% APY` : 'Loading...'}
+                        {currentApy !== null ? `~${currentApy.toFixed(1)}% APY` : t('common.loading')}
                      </div>
                   </div>
 
@@ -226,8 +228,8 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                            <div className="p-3 bg-white/5 rounded-full mb-3 text-text-muted border border-white/5">
                               <Layers size={24} />
                            </div>
-                           <p className="text-white font-medium mb-1 text-base">No active stakes</p>
-                           <p className="text-text-muted text-xs mb-4 max-w-[180px]">Earn rewards by staking your SAL for ~30 days.</p>
+                           <p className="text-white font-medium mb-1 text-base">{t('dashboard.noActiveStakes')}</p>
+                           <p className="text-text-muted text-xs mb-4 max-w-[180px]">{t('dashboard.earnRewards')}</p>
                         </div>
                      ) : (
                         activeStakes.map((stake: any) => {
@@ -265,7 +267,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                                  <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-1.5 text-text-muted group-hover:text-text-secondary transition-colors text-xs">
                                        <Clock size={10} className="w-[10px] h-[10px]" />
-                                       <span>Unlocks in {timeEstimate} ({remaining.toLocaleString()} blocks)</span>
+                                       <span>{t('dashboard.unlocksIn', { time: timeEstimate, blocks: remaining.toLocaleString() })}</span>
                                     </div>
                                     <span className="text-text-muted font-mono text-xs">{progress.toFixed(1)}%</span>
                                  </div>
@@ -284,7 +286,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         onClick={() => onNavigate(TabView.STAKING)}
                      >
                         <Plus size={14} className="mr-2" />
-                        Create New Stake
+                        {t('dashboard.createNewStake')}
                      </Button>
                   </div>
                </Card>
@@ -302,7 +304,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                      <div className="p-2 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-lg text-white">
                         <TrendingUp size={20} />
                      </div>
-                     <h3 className="text-white font-bold text-base">Wallet Performance</h3>
+                     <h3 className="text-white font-bold text-base">{t('dashboard.walletPerformance')}</h3>
                   </div>
                </div>
                <div className="flex flex-col flex-1 w-full bg-gradient-to-b from-[#131320] to-[#0f0f18]/50 relative min-h-0 pb-1">
@@ -310,7 +312,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                      <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm bg-bg-primary/20">
                         <div className="flex flex-col items-center gap-2 text-text-muted">
                            <EyeOff size={24} />
-                           <span className="text-sm">Chart Hidden</span>
+                           <span className="text-sm">{t('dashboard.chartHidden')}</span>
                         </div>
                      </div>
                   )}
@@ -327,9 +329,9 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                <Card noPadding className="h-full min-h-[15.625rem] overflow-hidden flex flex-col border-white/5 bg-[#131320]">
                   <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                      <h3 className="text-base font-bold text-white flex items-center gap-2">
-                        Recent Activity
+                        {t('dashboard.recentActivity')}
                      </h3>
-                     <Button variant="ghost" size="sm" className="text-xs h-8 hover:bg-white/5 text-text-secondary" onClick={() => onNavigate(TabView.HISTORY)}>View All</Button>
+                     <Button variant="ghost" size="sm" className="text-xs h-8 hover:bg-white/5 text-text-secondary" onClick={() => onNavigate(TabView.HISTORY)}>{t('dashboard.viewAll')}</Button>
                   </div>
                   <div className="flex-1 overflow-auto custom-scrollbar">
                      <TransactionList compact={true} />

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -18,6 +19,7 @@ import { useWallet, ChartDataPoint } from '../services/WalletContext';
 type TimeFrame = '1D' | '1W' | '1M' | '1Y' | 'ALL';
 
 const BalanceChart: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const wallet = useWallet();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('1M');
 
@@ -59,18 +61,19 @@ const BalanceChart: React.FC = () => {
   // Format date based on timeframe
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
+    const locale = i18n.language;
     switch (timeFrame) {
       case '1D':
-        return date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
       case '1W':
-        return date.toLocaleDateString('default', { weekday: 'short', day: 'numeric' });
+        return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' });
       case '1M':
-        return `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })}`;
+        return `${date.getDate()} ${date.toLocaleString(locale, { month: 'short' })}`;
       case '1Y':
       case 'ALL':
-        return date.toLocaleDateString('default', { month: 'short', year: '2-digit' });
+        return date.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
       default:
-        return `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })}`;
+        return `${date.getDate()} ${date.toLocaleString(locale, { month: 'short' })}`;
     }
   };
 
@@ -91,11 +94,11 @@ const BalanceChart: React.FC = () => {
   // Get timeframe label for subtitle
   const getTimeframeLabel = () => {
     switch (timeFrame) {
-      case '1D': return 'Last 24 Hours';
-      case '1W': return 'Last 7 Days';
-      case '1M': return 'Last 30 Days';
-      case '1Y': return 'Last 12 Months';
-      case 'ALL': return 'Since MEXC Listing';
+      case '1D': return t('chart.last24Hours');
+      case '1W': return t('chart.last7Days');
+      case '1M': return t('chart.last30Days');
+      case '1Y': return t('chart.last12Months');
+      case 'ALL': return t('chart.sinceMexcListing');
       default: return '';
     }
   };
@@ -182,7 +185,7 @@ const BalanceChart: React.FC = () => {
         <div className="absolute inset-0">
           {filteredData.length === 0 ? (
             <div className="flex items-center justify-center h-full text-text-muted">
-              <p>No history data available</p>
+              <p>{t('chart.noHistoryData')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%" minHeight={200}>
@@ -233,7 +236,7 @@ const BalanceChart: React.FC = () => {
                   itemStyle={{ color: '#8b5cf6', fontFamily: 'JetBrains Mono' }}
                   labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontFamily: 'JetBrains Mono', fontSize: '12px' }}
                   cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  formatter={(value: number) => [formatCurrency(value), 'Wallet Value']}
+                  formatter={(value: number) => [formatCurrency(value), t('chart.walletValue')]}
                   labelFormatter={formatTooltipDate}
                 />
                 <Area

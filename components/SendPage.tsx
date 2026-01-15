@@ -1,4 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -21,6 +22,7 @@ interface SendPageProps {
 }
 
 const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
+  const { t } = useTranslation();
   const wallet = useWallet();
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -79,7 +81,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
       if (val > available) {
         setValidationState({
           type: 'error',
-          message: 'Amount exceeds available balance'
+          message: t('send.errors.exceedsBalance')
         });
         setActualSendAmount(null);
       } else if (totalNeeded > available) {
@@ -88,13 +90,13 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         if (remaining > 0) {
           setValidationState({
             type: 'warning',
-            message: 'Amount will be adjusted to cover transaction fee'
+            message: t('send.errors.adjustedForFee')
           });
           setActualSendAmount(remaining);
         } else {
           setValidationState({
             type: 'error',
-            message: 'Insufficient funds to cover transaction fee'
+            message: t('send.errors.insufficientFees')
           });
           setActualSendAmount(null);
         }
@@ -126,7 +128,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
     }
 
     if (!address || !amount) {
-      setError('Please fill in all required fields');
+      setError(t('send.errors.fillRequired'));
       return;
     }
 
@@ -182,7 +184,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
 
   const handleDeleteContact = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this contact?')) {
+    if (window.confirm(t('contacts.deleteConfirm'))) {
       wallet.removeContact(id);
     }
   };
@@ -213,7 +215,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-[0.875rem] h-[0.875rem]" />
         <input
           type="text"
-          placeholder="Search contacts..."
+          placeholder={t('send.searchContacts')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-bg-secondary border border-border-color rounded-lg py-3 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-accent-primary/50 transition-colors"
@@ -223,7 +225,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
       <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar min-h-0">
         {filteredContacts.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-text-muted text-sm">No contacts found</p>
+            <p className="text-text-muted text-sm">{t('send.noContacts')}</p>
           </div>
         ) : (
           filteredContacts.map((contact) => (
@@ -277,7 +279,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
           <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
             <UserPlus className="mr-2 w-4 h-4" />
-            Add New Address
+            {t('send.addNewAddress')}
           </Button>
         </div>
       )}
@@ -298,9 +300,9 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
                 <Send className="w-6 h-6" />
               </div>
-              <h2 className="text-xl font-bold text-white">Send Assets</h2>
+              <h2 className="text-xl font-bold text-white">{t('send.title')}</h2>
             </div>
-            <p className="text-text-muted text-sm pl-11">Transfer SAL to another wallet securely.</p>
+            <p className="text-text-muted text-sm pl-11">{t('send.subtitle')}</p>
           </div>
 
           {!sentSuccess ? (
@@ -308,14 +310,14 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               {/* Address Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary flex justify-between">
-                  <span>Recipient Address</span>
+                  <span>{t('send.recipientAddress')}</span>
                   {isMobileOrTablet && (
                     <button
                       onClick={() => setIsAddressBookOpen(true)}
                       className="text-xs text-accent-primary hover:text-accent-secondary transition-colors flex items-center"
                     >
                       <BookOpen className="mr-1 w-3 h-3" />
-                      Address Book
+                      {t('send.addressBook')}
                     </button>
                   )}
                 </label>
@@ -344,9 +346,9 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               {/* Amount Input */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary font-medium">Amount</span>
+                  <span className="text-text-secondary font-medium">{t('send.amount')}</span>
                   <span className="text-text-muted">
-                    Available: <span className="text-white font-mono">{formatSAL(wallet.balance.unlockedBalanceSAL || wallet.balance.unlockedBalance / 1e8)} SAL</span>
+                    {t('send.available')}: <span className="text-white font-mono">{formatSAL(wallet.balance.unlockedBalanceSAL || wallet.balance.unlockedBalance / 1e8)} SAL</span>
                   </span>
                 </div>
                 <div className="relative">
@@ -365,9 +367,9 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                       onClick={() => setAmount(((wallet.balance.unlockedBalance || 0) / 100000000).toString())}
                       className="text-xs text-accent-primary hover:text-white font-semibold transition-colors uppercase"
                     >
-                      Max
+                      {t('common.max')}
                     </button>
-                    <span className="text-text-muted font-bold text-sm pl-2 border-l border-white/10">SAL</span>
+                    <span className="text-text-muted font-bold text-sm pl-2 border-l border-white/10">{t('common.sal')}</span>
                   </div>
                 </div>
                 {/* Validation Message */}
@@ -382,9 +384,9 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
 
               {/* Payment ID (Optional) */}
               <div className="space-y-2">
-                <label className="text-sm text-text-secondary">Payment ID (Optional)</label>
+                <label className="text-sm text-text-secondary">{t('send.paymentId')}</label>
                 <Input
-                  placeholder="Enter payment ID"
+                  placeholder={t('send.enterPaymentId')}
                   value={paymentId}
                   onChange={(e) => setPaymentId(e.target.value)}
                   className="font-mono"
@@ -406,7 +408,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                   disabled={isSending}
                   className="w-full py-4 text-lg font-bold shadow-xl shadow-accent-primary/10 hover:shadow-accent-primary/20"
                 >
-                  {isSending ? 'Creating Transaction...' : 'Send Assets'}
+                  {isSending ? t('send.creatingTransaction') : t('send.sendAssets')}
                   {!isSending && <ArrowRight className="ml-2 w-5 h-5" />}
                 </Button>
               </div>
@@ -418,18 +420,18 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Transaction Sent!</h3>
-              <p className="text-text-muted mb-8 max-w-xs">{amount} SAL has been sent to the network.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">{t('send.transactionSent')}</h3>
+              <p className="text-text-muted mb-8 max-w-xs">{t('send.amountSent', { amount })}</p>
 
               {txHash && (
                 <div className="w-full bg-black/20 p-4 rounded-xl border border-white/10 mb-8 max-w-md">
-                  <p className="text-xs text-text-muted uppercase tracking-widest mb-2">Transaction Hash</p>
+                  <p className="text-xs text-text-muted uppercase tracking-widest mb-2">{t('send.transactionHash')}</p>
                   <p className="font-mono text-xs text-accent-primary break-all select-all">{txHash}</p>
                 </div>
               )}
 
               <Button onClick={resetForm} variant="secondary">
-                Send Another Transaction
+                {t('send.sendAnother')}
               </Button>
             </div>
           )}
@@ -445,7 +447,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                 <div className="p-2 bg-white/5 rounded-lg text-white">
                   <User className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Address Book</h3>
+                <h3 className="text-lg font-bold text-white">{t('send.addressBook')}</h3>
               </div>
             </div>
             <AddressBookList />
@@ -454,7 +456,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
       )}
 
       {/* OVERLAY for Address Book on Mobile */}
-      <Overlay isOpen={isAddressBookOpen} onClose={() => setIsAddressBookOpen(false)} title="Address Book">
+      <Overlay isOpen={isAddressBookOpen} onClose={() => setIsAddressBookOpen(false)} title={t('send.addressBook')}>
         <button
           onClick={openAddModal}
           className="fixed bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
@@ -471,7 +473,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
           <div className="bg-[#191928] border border-border-color rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative z-10">
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
               <h3 className="font-bold text-lg text-white">
-                {editingContact ? 'Edit Contact' : 'Add New Contact'}
+                {editingContact ? t('contacts.editContact') : t('contacts.addNewContact')}
               </h3>
               <button onClick={closeModal} className="text-text-muted hover:text-white transition-colors">
                 <X className="w-5 h-5" />
@@ -480,9 +482,9 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
 
             <div className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-sm text-text-secondary">Name</label>
+                <label className="text-sm text-text-secondary">{t('contacts.name')}</label>
                 <Input
-                  placeholder="e.g. John Doe"
+                  placeholder={t('contacts.namePlaceholder')}
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   autoFocus
@@ -490,7 +492,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-text-secondary">Salvium Address</label>
+                <label className="text-sm text-text-secondary">{t('contacts.salviumAddress')}</label>
                 <div className="relative">
                   <Input
                     placeholder="SC1..."
@@ -513,7 +515,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
             </div>
 
             <div className="p-6 border-t border-white/5 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModal}>Cancel</Button>
+              <Button variant="ghost" onClick={closeModal}>{t('common.cancel')}</Button>
               <Button onClick={() => {
                 if (editingContact) {
                   wallet.updateContact(editingContact.id, { name: contactName, address: contactAddress });
@@ -522,7 +524,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                 }
                 closeModal();
               }}>
-                {editingContact ? 'Save Changes' : 'Add Contact'}
+                {editingContact ? t('contacts.saveChanges') : t('contacts.addContact')}
               </Button>
             </div>
           </div>
@@ -533,7 +535,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
           <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
             <div className="text-white text-center">
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-              <p>Loading scanner...</p>
+              <p>{t('send.loadingScanner')}</p>
             </div>
           </div>
         }>

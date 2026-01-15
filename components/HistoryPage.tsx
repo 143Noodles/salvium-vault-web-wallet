@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -11,6 +12,7 @@ import TransactionOverlay from './TransactionOverlay';
 import { useWallet } from '../services/WalletContext';
 
 const HistoryPage: React.FC = () => {
+   const { t } = useTranslation();
    const wallet = useWallet();
    const [copied, setCopied] = useState(false);
    const [searchQuery, setSearchQuery] = useState('');
@@ -75,11 +77,11 @@ const HistoryPage: React.FC = () => {
 
    // Available filters
    const filterOptions = [
-      { id: 'in', label: 'Received', color: 'text-accent-success' },
-      { id: 'out', label: 'Sent', color: 'text-red-500' },
-      { id: 'pending', label: 'Pending', color: 'text-accent-warning' },
-      { id: 'mining', label: 'Mining', color: 'text-yellow-400' },
-      { id: 'stake', label: 'Stake', color: 'text-blue-400' },
+      { id: 'in', label: t('history.filterOptions.received'), color: 'text-accent-success' },
+      { id: 'out', label: t('history.filterOptions.sent'), color: 'text-red-500' },
+      { id: 'pending', label: t('history.filterOptions.pending'), color: 'text-accent-warning' },
+      { id: 'mining', label: t('history.filterOptions.mining'), color: 'text-yellow-400' },
+      { id: 'stake', label: t('history.filterOptions.stake'), color: 'text-blue-400' },
    ];
 
    // Derived filtered transactions
@@ -138,9 +140,9 @@ const HistoryPage: React.FC = () => {
                      <History size={24} />
                   </div>
                   <div>
-                     <h2 className="text-xl font-bold text-white">Transaction History</h2>
+                     <h2 className="text-xl font-bold text-white">{t('history.title')}</h2>
                      <p className="text-text-muted text-xs">
-                        {filteredTransactions.length} transactions found
+                        {t('history.transactionsFound', { count: filteredTransactions.length })}
                      </p>
                   </div>
                </div>
@@ -150,7 +152,7 @@ const HistoryPage: React.FC = () => {
                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                      <input
                         className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-text-muted focus:outline-none focus:border-accent-primary/50 transition-all"
-                        placeholder="Search hash or amount..."
+                        placeholder={t('history.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                      />
@@ -165,7 +167,7 @@ const HistoryPage: React.FC = () => {
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
                      >
                         <Filter size={16} className="mr-2" />
-                        Filter {filterTypes.size > 0 && `(${filterTypes.size})`}
+                        {t('history.filter')} {filterTypes.size > 0 && `(${filterTypes.size})`}
                      </Button>
 
                      {isFilterOpen && (
@@ -196,7 +198,7 @@ const HistoryPage: React.FC = () => {
                                        onClick={() => setFilterTypes(new Set())}
                                        className="w-full text-center text-xs text-text-muted hover:text-white py-1"
                                     >
-                                       Clear Filters
+                                       {t('history.clearFilters')}
                                     </button>
                                  </div>
                               )}
@@ -214,11 +216,11 @@ const HistoryPage: React.FC = () => {
                   >
                      {copied ? (
                         <>
-                           <Check size={16} className="mr-2 text-accent-success" /> Copied!
+                           <Check size={16} className="mr-2 text-accent-success" /> {t('common.copied')}
                         </>
                      ) : (
                         <>
-                           <Download size={16} className="mr-2" /> Export
+                           <Download size={16} className="mr-2" /> {t('history.export')}
                         </>
                      )}
                   </Button>

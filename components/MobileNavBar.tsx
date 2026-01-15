@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TabView } from '../App';
 import { LayoutDashboard, Send, Download, TrendingUp, History } from './Icons';
 import { isDesktop } from '../utils/device';
@@ -12,6 +13,7 @@ interface MobileNavBarProps {
 }
 
 export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onNavigate }) => {
+    const { t } = useTranslation();
     // Show on mobile and tablet, hide only on desktop
     if (isDesktopOnly) return null;
     const NavItem = ({ tab, icon: Icon, label }: { tab: TabView; icon: any; label: string }) => {
@@ -40,11 +42,11 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onNavigat
             }}
         >
             <div className="flex justify-around items-center h-[56px] max-w-md mx-auto px-2 pt-2">
-                <NavItem tab={TabView.DASHBOARD} icon={LayoutDashboard} label="Home" />
-                <NavItem tab={TabView.SEND} icon={Send} label="Send" />
-                <NavItem tab={TabView.RECEIVE} icon={Download} label="Receive" />
-                <NavItem tab={TabView.STAKING} icon={TrendingUp} label="Stake" />
-                <NavItem tab={TabView.HISTORY} icon={History} label="History" />
+                <NavItem tab={TabView.DASHBOARD} icon={LayoutDashboard} label={t('navigation.home')} />
+                <NavItem tab={TabView.SEND} icon={Send} label={t('navigation.send')} />
+                <NavItem tab={TabView.RECEIVE} icon={Download} label={t('navigation.receive')} />
+                <NavItem tab={TabView.STAKING} icon={TrendingUp} label={t('navigation.stake')} />
+                <NavItem tab={TabView.HISTORY} icon={History} label={t('navigation.history')} />
             </div>
         </div>
     );

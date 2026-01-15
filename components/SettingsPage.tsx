@@ -5,7 +5,9 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge } from './UIComponents';
-import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2 } from './Icons';
+import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe } from './Icons';
+import LanguageSelector from './LanguageSelector';
+import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
 import { downloadBackup } from '../services/BackupService';
 import { BiometricService } from '../services/BiometricService';
@@ -30,6 +32,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
    onRescan,
    onNavigate
 }) => {
+   const { t } = useTranslation();
    const wallet = useWallet();
    const [isRescanning, setIsRescanning] = useState(false);
 
@@ -99,9 +102,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       } catch (e: any) {
          console.error(e);
          if (e.name === 'NotAllowedError') {
-            setBioError('Biometric setup cancelled');
+            setBioError(t('settings.biometrics.cancelled'));
          } else {
-            setBioError(e.message || 'Failed to enable biometrics');
+            setBioError(e.message || t('settings.biometrics.failed'));
          }
          // If enable failed (e.g. user cancelled face id), ensure we stay disabled
          BiometricService.disable();
@@ -139,7 +142,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
    const handleExportBackup = async () => {
       if (!backupPassword) {
-         setBackupError('Please enter your wallet password');
+         setBackupError(t('settings.backup.enterPassword'));
          return;
       }
 
@@ -174,17 +177,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
    const handleChangePassword = async () => {
       if (!currentPassword || !newPassword || !confirmPassword) {
-         setPasswordError('Please fill in all fields');
+         setPasswordError(t('settings.password.errors.fillAll'));
          return;
       }
 
       if (newPassword !== confirmPassword) {
-         setPasswordError('New passwords do not match');
+         setPasswordError(t('settings.password.errors.mismatch'));
          return;
       }
 
       if (newPassword.length < 1) {
-         setPasswordError('Password cannot be empty');
+         setPasswordError(t('settings.password.errors.empty'));
          return;
       }
 
@@ -227,9 +230,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <Heart size={24} className="fill-current" />
                         </div>
                         <div>
-                           <h4 className="text-white font-bold text-lg mb-1">Donate to Salvium.Tools</h4>
+                           <h4 className="text-white font-bold text-lg mb-1">{t('settings.donate.title')}</h4>
                            <p className="text-sm text-text-muted max-w-lg leading-relaxed">
-                              This is a community funded project and donations will go to server costs. Your support helps keep the vault secure, fast, and constantly improving.
+                              {t('settings.donate.description')}
                            </p>
                         </div>
                      </div>
@@ -246,7 +249,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         }}
                      >
                         <Heart size={16} className="mr-2 fill-white/20" />
-                        Donate Now
+                        {t('settings.donate.button')}
                      </Button>
                   </div>
             </Card>
@@ -256,14 +259,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   <div className="p-2 bg-accent-primary/20 text-accent-primary rounded-xl">
                      <Settings size={28} />
                   </div>
-                  Settings
+                  {t('settings.title')}
                </h2>
-               <p className="text-text-muted text-sm pl-14">Configure your wallet security, network, and preferences.</p>
+               <p className="text-text-muted text-sm pl-14">{t('settings.subtitle')}</p>
             </div>
 
             {/* Security Section */}
             <div className="space-y-4">
-               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">Security & Privacy</h3>
+               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">{t('settings.sections.securityPrivacy')}</h3>
 
                <Card className="space-y-6">
                   {/* Biometric Unlock */}
@@ -275,8 +278,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                  <ScanFace size={20} />
                               </div>
                               <div>
-                                 <h4 className="text-white font-medium mb-1">Unlock with Biometrics</h4>
-                                 <p className="text-sm text-text-muted max-w-sm">Use biometrics to quickly unlock your wallet.</p>
+                                 <h4 className="text-white font-medium mb-1">{t('settings.biometrics.title')}</h4>
+                                 <p className="text-sm text-text-muted max-w-sm">{t('settings.biometrics.description')}</p>
                               </div>
                            </div>
 
@@ -301,12 +304,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <Lock size={20} />
                         </div>
                         <div>
-                           <h4 className="text-white font-medium mb-1">Auto-Lock Wallet</h4>
-                           <p className="text-sm text-text-muted max-w-sm">Automatically lock the wallet after a period of inactivity to protect your funds.</p>
+                           <h4 className="text-white font-medium mb-1">{t('settings.autoLock.title')}</h4>
+                           <p className="text-sm text-text-muted max-w-sm">{t('settings.autoLock.description')}</p>
 
                            {autoLockEnabled && (
                               <div className="mt-4 flex items-center gap-3">
-                                 <label className="text-sm text-text-secondary">Lock after</label>
+                                 <label className="text-sm text-text-secondary">{t('settings.autoLock.lockAfter')}</label>
                                  <div className="w-20">
                                     <Input
                                        type="number"
@@ -315,7 +318,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                        className="py-1 px-2 text-center h-8 text-sm"
                                     />
                                  </div>
-                                 <span className="text-sm text-text-secondary">minutes</span>
+                                 <span className="text-sm text-text-secondary">{t('settings.autoLock.minutes')}</span>
                               </div>
                            )}
                         </div>
@@ -340,13 +343,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <Download size={20} />
                         </div>
                         <div>
-                           <h4 className="text-white font-medium mb-1">Export Backup</h4>
-                           <p className="text-sm text-text-muted max-w-sm">Create an encrypted backup file containing your wallet, address book, and settings.</p>
+                           <h4 className="text-white font-medium mb-1">{t('settings.backup.title')}</h4>
+                           <p className="text-sm text-text-muted max-w-sm">{t('settings.backup.description')}</p>
                         </div>
                      </div>
                      <Button variant="secondary" size="sm" onClick={() => setShowBackupModal(true)}>
                         <Download size={14} className="mr-1" />
-                        Export
+                        {t('settings.backup.export')}
                      </Button>
                   </div>
 
@@ -359,18 +362,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <Shield size={20} />
                         </div>
                         <div>
-                           <h4 className="text-white font-medium mb-1">Change Vault Password</h4>
-                           <p className="text-sm text-text-muted">Update the password used to encrypt your private keys.</p>
+                           <h4 className="text-white font-medium mb-1">{t('settings.password.title')}</h4>
+                           <p className="text-sm text-text-muted">{t('settings.password.description')}</p>
                         </div>
                      </div>
-                     <Button variant="secondary" size="sm" onClick={() => setShowPasswordModal(true)}>Update</Button>
+                     <Button variant="secondary" size="sm" onClick={() => setShowPasswordModal(true)}>{t('settings.password.update')}</Button>
                   </div>
                </Card>
             </div>
 
             {/* General Section */}
             <div className="space-y-4">
-               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">General</h3>
+               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">{t('settings.sections.general')}</h3>
 
                <Card className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -379,11 +382,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <Database size={20} />
                         </div>
                         <div>
-                           <h4 className="text-white font-medium mb-1">Blockchain Data</h4>
+                           <h4 className="text-white font-medium mb-1">{t('settings.blockchain.title')}</h4>
                            <p className="text-sm text-text-muted">
-                              Wallet synced to block <span className="font-mono">{walletHeight.toLocaleString()}</span>
+                              {t('settings.blockchain.syncedTo', { height: walletHeight.toLocaleString() })}
                            </p>
-                           <p className="text-xs text-text-muted mt-1">Rescan wallet to find missing transactions</p>
+                           <p className="text-xs text-text-muted mt-1">{t('settings.blockchain.rescanHint')}</p>
                         </div>
                      </div>
                      <Button
@@ -395,15 +398,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         {isRescanning || wallet.isScanning ? (
                            <>
                               <Loader2 size={14} className="mr-1 animate-spin" />
-                              Scanning...
+                              {t('settings.blockchain.scanning')}
                            </>
                         ) : (
                            <>
                               <RefreshCw size={14} className="mr-1" />
-                              Rescan
+                              {t('settings.blockchain.rescan')}
                            </>
                         )}
                      </Button>
+                  </div>
+               </Card>
+            </div>
+
+            {/* Language Section */}
+            <div className="space-y-4">
+               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">{t('settings.sections.language')}</h3>
+
+               <Card>
+                  <div className="flex items-center justify-between gap-4">
+                     <div className="flex gap-4">
+                        <div className="p-2.5 bg-bg-primary rounded-lg border border-white/5 h-fit text-text-secondary">
+                           <Globe size={20} />
+                        </div>
+                        <div>
+                           <h4 className="text-white font-medium mb-1">{t('settings.language.title')}</h4>
+                           <p className="text-sm text-text-muted">{t('settings.language.description')}</p>
+                        </div>
+                     </div>
+                     <LanguageSelector />
                   </div>
                </Card>
             </div>
@@ -425,17 +448,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                            <Download size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Export Backup</h3>
-                        <p className="text-text-muted text-sm">Enter your wallet password to create an encrypted backup file.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('settings.backup.modalTitle')}</h3>
+                        <p className="text-text-muted text-sm">{t('settings.backup.modalDescription')}</p>
                      </div>
 
                      <div className="space-y-4">
                         <div className="space-y-2">
-                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Wallet Password</label>
+                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('settings.backup.walletPassword')}</label>
                            <div className="relative">
                               <Input
                                  type={isMobile ? 'text' : (showBackupPassword ? 'text' : 'password')}
-                                 placeholder="Enter your wallet password"
+                                 placeholder={t('settings.backup.enterPassword')}
                                  value={backupPassword}
                                  onChange={(e) => setBackupPassword(e.target.value)}
                                  disabled={isExporting}
@@ -458,25 +481,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                         <div className="bg-accent-warning/10 border border-accent-warning/20 rounded-xl p-3">
                            <p className="text-xs text-accent-warning/90 leading-relaxed">
-                              The backup file will be encrypted with your wallet password. Store it securely - anyone with this file and your password can access your funds.
+                              {t('settings.backup.warning')}
                            </p>
                         </div>
                      </div>
 
                      <div className="flex gap-3">
                         <Button variant="ghost" onClick={closeBackupModal} className="flex-1" disabled={isExporting}>
-                           Cancel
+                           {t('common.cancel')}
                         </Button>
                         <Button className="flex-[2]" onClick={handleExportBackup} disabled={isExporting}>
                            {isExporting ? (
                               <>
                                  <Loader2 size={16} className="mr-2 animate-spin" />
-                                 Exporting...
+                                 {t('settings.backup.exporting')}
                               </>
                            ) : (
                               <>
                                  <Download size={16} className="mr-2" />
-                                 Download Backup
+                                 {t('settings.backup.downloadBackup')}
                               </>
                            )}
                         </Button>
@@ -502,17 +525,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                            <ScanFace size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Enable Biometric Unlock</h3>
-                        <p className="text-text-muted text-sm">Enter your password to authorize biometrics setup.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('settings.biometrics.enableTitle')}</h3>
+                        <p className="text-text-muted text-sm">{t('settings.biometrics.enableDescription')}</p>
                      </div>
 
                      <div className="space-y-4">
                         <div className="space-y-2">
-                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Wallet Password</label>
+                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('settings.backup.walletPassword')}</label>
                            <div className="relative">
                               <Input
                                  type={isMobile ? 'text' : (showBioPassword ? 'text' : 'password')}
-                                 placeholder="Enter your wallet password"
+                                 placeholder={t('settings.backup.enterPassword')}
                                  value={bioPassword}
                                  onChange={(e) => setBioPassword(e.target.value)}
                                  disabled={isBioProcessing}
@@ -536,18 +559,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                      <div className="flex gap-3">
                         <Button variant="ghost" onClick={() => setShowBioModal(false)} className="flex-1" disabled={isBioProcessing}>
-                           Cancel
+                           {t('common.cancel')}
                         </Button>
                         <Button className="flex-[2]" onClick={handleEnableBio} disabled={isBioProcessing}>
                            {isBioProcessing ? (
                               <>
                                  <Loader2 size={16} className="mr-2 animate-spin" />
-                                 Verifying...
+                                 {t('settings.biometrics.verifying')}
                               </>
                            ) : (
                               <>
                                  <ScanFace size={16} className="mr-2" />
-                                 Enable Biometric Unlock
+                                 {t('settings.biometrics.enableButton')}
                               </>
                            )}
                         </Button>
@@ -573,18 +596,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                            <Shield size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Change Password</h3>
-                        <p className="text-text-muted text-sm">Create a new strong password for your vault.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('settings.password.modalTitle')}</h3>
+                        <p className="text-text-muted text-sm">{t('settings.password.modalDescription')}</p>
                      </div>
 
                      <div className="space-y-4">
                         {/* Current Password */}
                         <div className="space-y-2">
-                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Current Password</label>
+                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('settings.password.current')}</label>
                            <div className="relative">
                               <Input
                                  type={isMobile ? 'text' : (showCurrentPassword ? 'text' : 'password')}
-                                 placeholder="Enter current password"
+                                 placeholder={t('settings.password.currentPlaceholder')}
                                  value={currentPassword}
                                  onChange={(e) => setCurrentPassword(e.target.value)}
                                  style={isMobile ? { WebkitTextSecurity: showCurrentPassword ? 'none' : 'disc' } : {}}
@@ -603,11 +626,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                         {/* New Password */}
                         <div className="space-y-2">
-                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">New Password</label>
+                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('settings.password.new')}</label>
                            <div className="relative">
                               <Input
                                  type={isMobile ? 'text' : (showNewPassword ? 'text' : 'password')}
-                                 placeholder="Enter new password"
+                                 placeholder={t('settings.password.newPlaceholder')}
                                  value={newPassword}
                                  onChange={(e) => setNewPassword(e.target.value)}
                                  style={isMobile ? { WebkitTextSecurity: showNewPassword ? 'none' : 'disc' } : {}}
@@ -626,11 +649,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                         {/* Confirm Password */}
                         <div className="space-y-2">
-                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Confirm New Password</label>
+                           <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('settings.password.confirm')}</label>
                            <div className="relative">
                               <Input
                                  type={isMobile ? 'text' : (showConfirmPassword ? 'text' : 'password')}
-                                 placeholder="Confirm new password"
+                                 placeholder={t('settings.password.confirmPlaceholder')}
                                  value={confirmPassword}
                                  onChange={(e) => setConfirmPassword(e.target.value)}
                                  style={isMobile ? { WebkitTextSecurity: showConfirmPassword ? 'none' : 'disc' } : {}}
@@ -653,16 +676,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                      <div className="flex gap-3">
                         <Button variant="ghost" onClick={closePasswordModal} className="flex-1" disabled={isChangingPassword}>
-                           Cancel
+                           {t('common.cancel')}
                         </Button>
                         <Button className="flex-[2]" onClick={handleChangePassword} disabled={isChangingPassword}>
                            {isChangingPassword ? (
                               <>
                                  <Loader2 size={16} className="mr-2 animate-spin" />
-                                 Updating...
+                                 {t('settings.password.updating')}
                               </>
                            ) : (
-                              'Update Password'
+                              t('settings.password.updateButton')
                            )}
                         </Button>
                      </div>
@@ -680,14 +703,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <CheckCircle2 size={32} className="text-green-500" />
                      </div>
                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Password Changed</h3>
-                        <p className="text-text-muted text-sm">Your vault password has been updated successfully.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('settings.password.successTitle')}</h3>
+                        <p className="text-text-muted text-sm">{t('settings.password.successDescription')}</p>
                      </div>
                      <Button
                         className="w-full"
                         onClick={() => setShowPasswordSuccess(false)}
                      >
-                        Done
+                        {t('common.done')}
                      </Button>
                   </Card>
                </div>

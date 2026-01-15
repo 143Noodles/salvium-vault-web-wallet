@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { Card, Button, Input, TextArea, Badge } from './UIComponents';
 import { Copy, ArrowUpRight, ArrowDownLeft, Shield, Key, CheckCircle2, ChevronRight, Eye, EyeOff, Plus, Download, Layers, Loader2, Upload, FileText } from './Icons';
 import { useWallet } from '../services/WalletContext';
@@ -14,6 +15,7 @@ interface OnboardingProps {
 }
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
+  const { t } = useTranslation();
   const wallet = useWallet();
   const [mode, setMode] = useState<OnboardingMode>('initial');
 
@@ -92,7 +94,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       setGeneratedSeed(seed);
     } catch (err) {
       console.error('Failed to generate seed:', err);
-      setError('Failed to generate seed phrase. Please try again.');
+      setError(t('onboarding.recoveryPhrase.failed'));
     } finally {
       setIsGenerating(false);
     }
@@ -126,7 +128,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
     if (verifyInput1.trim().toLowerCase() !== word1.toLowerCase() ||
         verifyInput2.trim().toLowerCase() !== word2.toLowerCase()) {
-      setVerifyError('Incorrect words. Please check your seed phrase and try again.');
+      setVerifyError(t('onboarding.verifySeed.incorrectWords'));
       return;
     }
 
@@ -136,11 +138,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const handleCreateWallet = async () => {
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('onboarding.setPassword.errors.minLength'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('onboarding.setPassword.errors.mismatch'));
       return;
     }
 
@@ -159,11 +161,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const handleRestoreWallet = async () => {
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('onboarding.setPassword.errors.minLength'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('onboarding.setPassword.errors.mismatch'));
       return;
     }
 
@@ -265,10 +267,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
           {/* Hero Text */}
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
-            Private by Design.
+            {t('onboarding.hero.title')}
           </h1>
           <p className="text-text-secondary text-sm md:text-base mb-6 leading-relaxed font-medium px-6 max-w-md mx-auto">
-            Securely store, send, and receive Salvium with full privacy.
+            {t('onboarding.hero.subtitle')}
           </p>
 
           {/* Action Cards */}
@@ -285,8 +287,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="text-center relative z-10">
-                <h3 className="text-white font-bold text-base mb-1">Create Wallet</h3>
-                <p className="text-text-muted text-xs">Generate a new 25-word seed</p>
+                <h3 className="text-white font-bold text-base mb-1">{t('onboarding.createWallet.title')}</h3>
+                <p className="text-text-muted text-xs">{t('onboarding.createWallet.description')}</p>
               </div>
             </button>
 
@@ -302,8 +304,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="text-center relative z-10">
-                <h3 className="text-white font-bold text-base mb-1">Restore Wallet</h3>
-                <p className="text-text-muted text-xs">Import from seed or backup</p>
+                <h3 className="text-white font-bold text-base mb-1">{t('onboarding.restoreWallet.title')}</h3>
+                <p className="text-text-muted text-xs">{t('onboarding.restoreWallet.description')}</p>
               </div>
             </button>
           </div>
@@ -313,7 +315,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div className="absolute bottom-[116px] left-0 w-full flex justify-center z-10 px-4">
           <div className="rounded-xl border border-accent-primary/10 bg-accent-primary/5 backdrop-blur-sm py-3 px-5 flex items-center justify-center gap-2 w-full max-w-2xl">
             <Shield size={14} className="text-accent-primary/70" />
-            <span className="text-text-secondary text-xs font-medium tracking-wide">Your keys remain encrypted on this device.</span>
+            <span className="text-text-secondary text-xs font-medium tracking-wide">{t('onboarding.securityBanner')}</span>
           </div>
         </div>
       </div>
@@ -328,14 +330,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {createStep === 'seed' && (
             <Card glow className="space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-2">Your Recovery Phrase</h2>
-                <p className="text-text-muted text-sm">Write these words down in order. This is the <span className="text-red-400 font-bold">ONLY</span> way to recover your funds.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.recoveryPhrase.title')}</h2>
+                <p className="text-text-muted text-sm">
+                  <Trans i18nKey="onboarding.recoveryPhrase.description">
+                    Write these words down in order. This is the <span className="text-red-400 font-bold">ONLY</span> way to recover your funds.
+                  </Trans>
+                </p>
               </div>
 
               {isGenerating ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 size={32} className="animate-spin text-accent-primary" />
-                  <span className="ml-3 text-text-muted">Generating secure seed phrase...</span>
+                  <span className="ml-3 text-text-muted">{t('onboarding.recoveryPhrase.generating')}</span>
                 </div>
               ) : generatedSeed ? (
                 isMobile ? (
@@ -362,9 +368,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 )
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-red-400">{error || 'Failed to generate seed'}</p>
+                  <p className="text-red-400">{error || t('onboarding.recoveryPhrase.failed')}</p>
                   <Button variant="secondary" onClick={generateNewSeed} className="mt-4">
-                    Try Again
+                    {t('onboarding.recoveryPhrase.tryAgain')}
                   </Button>
                 </div>
               )}
@@ -372,18 +378,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               <div className="bg-accent-warning/10 border border-accent-warning/20 rounded-xl p-4 flex gap-3 items-start">
                 <Shield className="text-accent-warning shrink-0 mt-0.5" size={18} />
                 <p className="text-xs text-accent-warning/90 leading-relaxed">
-                  Do not share these words with anyone. Salvium support will never ask for your recovery phrase. Store them offline in a secure location.
+                  {t('onboarding.recoveryPhrase.warning')}
                 </p>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="ghost" onClick={() => { setLoadingSelection(null); setMode('initial'); }} className="flex-1">Back</Button>
+                <Button variant="ghost" onClick={() => { setLoadingSelection(null); setMode('initial'); }} className="flex-1">{t('common.back')}</Button>
                 <Button variant="secondary" onClick={copySeed} className="flex-1" disabled={!generatedSeed}>
                   <Copy size={16} className="mr-2" />
-                  Copy
+                  {t('common.copy')}
                 </Button>
                 <Button className="flex-[2]" onClick={startSeedVerification} disabled={!generatedSeed}>
-                  I Saved It
+                  {t('onboarding.recoveryPhrase.iSavedIt')}
                   <ChevronRight size={16} className="ml-2" />
                 </Button>
               </div>
@@ -396,18 +402,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                   <Shield size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Verify Your Seed</h2>
-                <p className="text-text-muted text-sm">Enter the requested words to confirm you saved your recovery phrase.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.verifySeed.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.verifySeed.description')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">
-                    Word #{verifyIndices[0] + 1}
+                    {t('onboarding.verifySeed.wordNumber', { number: verifyIndices[0] + 1 })}
                   </label>
                   <Input
                     type="text"
-                    placeholder={`Enter word #${verifyIndices[0] + 1}`}
+                    placeholder={t('onboarding.verifySeed.enterWord', { number: verifyIndices[0] + 1 })}
                     value={verifyInput1}
                     onChange={(e) => setVerifyInput1(e.target.value)}
                     autoComplete="off"
@@ -418,11 +424,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">
-                    Word #{verifyIndices[1] + 1}
+                    {t('onboarding.verifySeed.wordNumber', { number: verifyIndices[1] + 1 })}
                   </label>
                   <Input
                     type="text"
-                    placeholder={`Enter word #${verifyIndices[1] + 1}`}
+                    placeholder={t('onboarding.verifySeed.enterWord', { number: verifyIndices[1] + 1 })}
                     value={verifyInput2}
                     onChange={(e) => setVerifyInput2(e.target.value)}
                     autoComplete="off"
@@ -435,13 +441,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setCreateStep('seed')} className="flex-1">Back</Button>
+                <Button variant="ghost" onClick={() => setCreateStep('seed')} className="flex-1">{t('common.back')}</Button>
                 <Button
                   className="flex-[2]"
                   onClick={handleVerifySeed}
                   disabled={!verifyInput1.trim() || !verifyInput2.trim()}
                 >
-                  Verify
+                  {t('onboarding.verifySeed.verify')}
                   <CheckCircle2 size={16} className="ml-2" />
                 </Button>
               </div>
@@ -454,17 +460,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                   <Key size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Set Vault Password</h2>
-                <p className="text-text-muted text-sm">This password will be used to encrypt your wallet on this device.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.setPassword.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.setPassword.description')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Password</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.setPassword.password')}</label>
                   <div className="relative">
                     <Input
                       type={isMobile ? 'text' : (showPassword ? 'text' : 'password')}
-                      placeholder="Enter strong password"
+                      placeholder={t('onboarding.setPassword.enterPassword')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
@@ -482,10 +488,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Confirm Password</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.setPassword.confirmPassword')}</label>
                   <Input
                     type={isMobile ? 'text' : 'password'}
-                    placeholder="Repeat password"
+                    placeholder={t('onboarding.setPassword.repeatPassword')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading}
@@ -499,16 +505,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setCreateStep('seed')} className="flex-1" disabled={isLoading}>Back</Button>
+                <Button variant="ghost" onClick={() => setCreateStep('seed')} className="flex-1" disabled={isLoading}>{t('common.back')}</Button>
                 <Button className="flex-[2]" onClick={handleCreateWallet} disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
-                      Creating...
+                      {t('onboarding.setPassword.creating')}
                     </>
                   ) : (
                     <>
-                      Finish Setup
+                      {t('onboarding.setPassword.finishSetup')}
                       <CheckCircle2 size={16} className="ml-2" />
                     </>
                   )}
@@ -531,8 +537,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {restoreStep === 'method' && (
             <Card glow className="space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-2">Restore Wallet</h2>
-                <p className="text-text-muted text-sm">Choose how you'd like to restore your wallet.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.restore.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.restore.description')}</p>
               </div>
 
               <div className="space-y-3">
@@ -544,8 +550,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <Key size={24} />
                   </div>
                   <div className="text-left flex-1">
-                    <h3 className="text-white font-medium">Seed Phrase</h3>
-                    <p className="text-text-muted text-xs">Enter your 25-word recovery phrase</p>
+                    <h3 className="text-white font-medium">{t('onboarding.restore.seedPhrase.title')}</h3>
+                    <p className="text-text-muted text-xs">{t('onboarding.restore.seedPhrase.description')}</p>
                   </div>
                   <ChevronRight size={20} className="text-text-muted group-hover:text-white transition-colors" />
                 </button>
@@ -558,15 +564,15 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <Upload size={24} />
                   </div>
                   <div className="text-left flex-1">
-                    <h3 className="text-white font-medium">Backup File</h3>
-                    <p className="text-text-muted text-xs">Restore from salvium.vault file</p>
+                    <h3 className="text-white font-medium">{t('onboarding.restore.backupFile.title')}</h3>
+                    <p className="text-text-muted text-xs">{t('onboarding.restore.backupFile.description')}</p>
                   </div>
                   <ChevronRight size={20} className="text-text-muted group-hover:text-white transition-colors" />
                 </button>
               </div>
 
               <Button variant="ghost" onClick={() => { resetRestoreFlow(); setMode('initial'); }} className="w-full">
-                Back
+                {t('common.back')}
               </Button>
             </Card>
           )}
@@ -575,16 +581,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {restoreStep === 'input' && (
             <Card glow className="space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-2">Enter Recovery Phrase</h2>
-                <p className="text-text-muted text-sm">Enter your 25-word seed phrase to restore your wallet.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.restore.enterSeed.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.restore.enterSeed.description')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Seed Phrase</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.restore.enterSeed.seedPhrase')}</label>
                   <TextArea
                     rows={4}
-                    placeholder="piano guitar drum violin flute..."
+                    placeholder={t('onboarding.restore.enterSeed.placeholder')}
                     value={restoreSeed}
                     onChange={(e) => setRestoreSeed(e.target.value)}
                     className="font-mono text-sm leading-relaxed"
@@ -595,11 +601,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   <label className="text-xs text-text-secondary uppercase font-bold tracking-wider flex items-center gap-2 w-full">
                     <div className="flex items-center gap-2">
                       <Layers size={12} />
-                      Restore Height
+                      {t('onboarding.restore.enterSeed.restoreHeight')}
                     </div>
                     {daemonHeight > 0 && (
                       <span className="ml-auto text-[10px] text-accent-primary font-mono bg-accent-primary/10 px-2 py-0.5 rounded-full">
-                        Current: {daemonHeight.toLocaleString()}
+                        {t('onboarding.restore.enterSeed.current', { height: daemonHeight.toLocaleString() })}
                       </span>
                     )}
                   </label>
@@ -610,18 +616,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     onChange={(e) => setRestoreHeight(e.target.value)}
                     className="font-mono"
                   />
-                  <p className="text-[10px] text-text-muted">Set to a specific block height. Scan from 0 if unsure. This may take several minutes.</p>
+                  <p className="text-[10px] text-text-muted">{t('onboarding.restore.enterSeed.heightHint')}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setRestoreStep('method')} className="flex-1">Back</Button>
+                <Button variant="ghost" onClick={() => setRestoreStep('method')} className="flex-1">{t('common.back')}</Button>
                 <Button
                   className="flex-[2]"
                   disabled={restoreSeed.trim().split(/\s+/).length < 12 || processingNext}
                   onClick={() => { setProcessingNext(true); setTimeout(() => { setRestoreStep('password'); setProcessingNext(false); }, 500); }}
                 >
-                  {processingNext ? <Loader2 size={16} className="animate-spin" /> : <>Next <ChevronRight size={16} className="ml-2" /></>}
+                  {processingNext ? <Loader2 size={16} className="animate-spin" /> : <>{t('common.next')} <ChevronRight size={16} className="ml-2" /></>}
                 </Button>
               </div>
             </Card>
@@ -634,17 +640,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
                   <Key size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Set Vault Password</h2>
-                <p className="text-text-muted text-sm">Create a new password to secure this wallet.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.setPassword.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.setPassword.description')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Password</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.setPassword.password')}</label>
                   <div className="relative">
                     <Input
                       type={isMobile ? 'text' : (showPassword ? 'text' : 'password')}
-                      placeholder="Enter strong password"
+                      placeholder={t('onboarding.setPassword.enterPassword')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
@@ -662,10 +668,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Confirm Password</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.setPassword.confirmPassword')}</label>
                   <Input
                     type={isMobile ? 'text' : 'password'}
-                    placeholder="Repeat password"
+                    placeholder={t('onboarding.setPassword.repeatPassword')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading}
@@ -679,16 +685,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setRestoreStep('input')} className="flex-1" disabled={isLoading}>Back</Button>
+                <Button variant="ghost" onClick={() => setRestoreStep('input')} className="flex-1" disabled={isLoading}>{t('common.back')}</Button>
                 <Button className="flex-[2]" onClick={handleRestoreWallet} disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
-                      Restoring...
+                      {t('onboarding.restore.restoring')}
                     </>
                   ) : (
                     <>
-                      Restore Wallet
+                      {t('onboarding.restore.restoreButton')}
                       <CheckCircle2 size={16} className="ml-2" />
                     </>
                   )}
@@ -704,8 +710,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-12 h-12 rounded-full bg-accent-secondary/10 flex items-center justify-center text-accent-secondary mx-auto mb-4">
                   <Upload size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Upload Backup File</h2>
-                <p className="text-text-muted text-sm">Select your .salvium-backup file to restore your wallet.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.restore.uploadBackup.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.restore.uploadBackup.description')}</p>
               </div>
 
               <div className="space-y-4">
@@ -730,7 +736,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         <p className="text-white font-medium">{backupFile.name}</p>
                         <p className="text-text-muted text-xs">{(backupFile.size / 1024).toFixed(1)} KB</p>
                       </div>
-                      <p className="text-accent-secondary text-xs">Click to change file</p>
+                      <p className="text-accent-secondary text-xs">{t('onboarding.restore.uploadBackup.changeFile')}</p>
                     </>
                   ) : (
                     <>
@@ -738,8 +744,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         <Upload size={28} />
                       </div>
                       <div className="text-center">
-                        <p className="text-white font-medium">Click to select file</p>
-                        <p className="text-text-muted text-xs">salvium.vault files only</p>
+                        <p className="text-white font-medium">{t('onboarding.restore.uploadBackup.selectFile')}</p>
+                        <p className="text-text-muted text-xs">{t('onboarding.restore.uploadBackup.filesOnly')}</p>
                       </div>
                     </>
                   )}
@@ -747,13 +753,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="ghost" onClick={() => { setBackupFile(null); setRestoreStep('method'); }} className="flex-1">Back</Button>
+                <Button variant="ghost" onClick={() => { setBackupFile(null); setRestoreStep('method'); }} className="flex-1">{t('common.back')}</Button>
                 <Button
                   className="flex-[2]"
                   disabled={!backupFile}
                   onClick={() => setRestoreStep('backup-password')}
                 >
-                  Next
+                  {t('common.next')}
                   <ChevronRight size={16} className="ml-2" />
                 </Button>
               </div>
@@ -767,17 +773,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="w-12 h-12 rounded-full bg-accent-secondary/10 flex items-center justify-center text-accent-secondary mx-auto mb-4">
                   <Key size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Enter Backup Password</h2>
-                <p className="text-text-muted text-sm">Enter the password that was used to create this backup.</p>
+                <h2 className="text-xl font-bold text-white mb-2">{t('onboarding.restore.backupPassword.title')}</h2>
+                <p className="text-text-muted text-sm">{t('onboarding.restore.backupPassword.description')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Backup Password</label>
+                  <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">{t('onboarding.restore.backupPassword.backupPassword')}</label>
                   <div className="relative">
                     <Input
                       type={isMobile ? 'text' : (showBackupPassword ? 'text' : 'password')}
-                      placeholder="Enter backup password"
+                      placeholder={t('onboarding.restore.backupPassword.enterPassword')}
                       value={backupPassword}
                       onChange={(e) => setBackupPassword(e.target.value)}
                       disabled={isDecrypting}
@@ -802,22 +808,22 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   <FileText size={16} className="text-accent-primary shrink-0 mt-0.5" />
                   <div>
                     <p className="text-white text-sm font-medium">{backupFile?.name}</p>
-                    <p className="text-text-muted text-xs">Ready to decrypt</p>
+                    <p className="text-text-muted text-xs">{t('onboarding.restore.backupPassword.readyToDecrypt')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setRestoreStep('upload')} className="flex-1" disabled={isDecrypting}>Back</Button>
+                <Button variant="ghost" onClick={() => setRestoreStep('upload')} className="flex-1" disabled={isDecrypting}>{t('common.back')}</Button>
                 <Button className="flex-[2]" onClick={handleDecryptBackup} disabled={isDecrypting}>
                   {isDecrypting ? (
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
-                      Decrypting...
+                      {t('onboarding.restore.backupPassword.decrypting')}
                     </>
                   ) : (
                     <>
-                      Restore Wallet
+                      {t('onboarding.restore.restoreButton')}
                       <CheckCircle2 size={16} className="ml-2" />
                     </>
                   )}

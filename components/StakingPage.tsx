@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -10,6 +11,7 @@ import { useWallet } from '../services/WalletContext';
 import { formatSAL, formatSAL3, formatSALCompact } from '../utils/format';
 
 const StakingPage: React.FC = () => {
+   const { t, i18n } = useTranslation();
    const wallet = useWallet();
    const [stakeAmount, setStakeAmount] = useState('');
    const [currentApy, setCurrentApy] = useState<number | null>(null);
@@ -166,7 +168,7 @@ const StakingPage: React.FC = () => {
       if (amount > available) {
          setValidationState({
             type: 'error',
-            message: 'Amount exceeds available balance'
+            message: t('staking.errors.exceedsBalance')
          });
          return;
       }
@@ -234,7 +236,7 @@ const StakingPage: React.FC = () => {
       }
 
       if (!isValidStakeAmount(stakeAmount)) {
-         setStakeError('Please enter a valid positive amount');
+         setStakeError(t('staking.errors.validAmount'));
          return;
       }
 
@@ -246,7 +248,7 @@ const StakingPage: React.FC = () => {
          // Use sweepAll when amount is close to max to auto-adjust for fees
          const sweepAll = validationState?.type === 'warning';
          const txHash = await wallet.stakeTransaction(numericAmount, sweepAll);
-         setStakeSuccess(`Stake transaction submitted! TX: ${txHash.slice(0, 16)}...`);
+         setStakeSuccess(t('staking.stakeSubmitted'));
          setStakeAmount(''); // Clear the input
 
          // Clear success message after 10 seconds
@@ -266,13 +268,13 @@ const StakingPage: React.FC = () => {
       isDataLoading ? (
          <div className="text-center text-text-muted py-8">
             <div className="w-6 h-6 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p>Loading stakes...</p>
+            <p>{t('staking.loadingStakes')}</p>
          </div>
       ) : activeStakes.length === 0 ? (
          <div className="text-center text-text-muted py-8">
             <Layers className="mx-auto mb-3 opacity-50 w-8 h-8" />
-            <p>No active stakes</p>
-            <p className="text-xs mt-1">Create a stake to start earning rewards</p>
+            <p>{t('staking.noActiveStakes')}</p>
+            <p className="text-xs mt-1">{t('staking.createToEarn')}</p>
          </div>
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -310,7 +312,7 @@ const StakingPage: React.FC = () => {
                      <div className="flex justify-between items-center">
                         <div className="flex items-center gap-1.5 text-text-muted group-hover:text-text-secondary transition-colors text-xs">
                            <Clock className="w-[10px] h-[10px]" />
-                           <span>Unlocks in {timeEstimate} ({remaining.toLocaleString()} blocks)</span>
+                           <span>{t('staking.unlocksIn', { time: timeEstimate })} ({t('staking.blocksRemaining', { blocks: remaining.toLocaleString() })})</span>
                         </div>
                         <span className="text-text-muted font-mono text-xs">{progress.toFixed(1)}%</span>
                      </div>
@@ -326,22 +328,22 @@ const StakingPage: React.FC = () => {
          {isDataLoading ? (
             <div className="text-center text-text-muted py-8">
                <div className="w-6 h-6 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-               <p>Loading history...</p>
+               <p>{t('staking.loadingHistory')}</p>
             </div>
          ) : cachedHistory.length === 0 ? (
             <div className="text-center text-text-muted py-8">
                <History className="mx-auto mb-3 opacity-50 w-8 h-8" />
-               <p>No completed stakes yet</p>
+               <p>{t('staking.noCompletedStakes')}</p>
             </div>
          ) : (
             <table className="w-full text-left border-collapse min-w-0">
                <thead className="sticky top-0 z-10">
                   <tr className="border-b border-border-color bg-bg-secondary text-text-muted text-[10px] md:text-xs uppercase tracking-wider">
-                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">Staked</th>
-                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">Returned</th>
-                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium text-right whitespace-nowrap">Amount</th>
-                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium text-right whitespace-nowrap">Rewards</th>
-                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">TX</th>
+                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">{t('staking.tableHeaders.staked')}</th>
+                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">{t('staking.tableHeaders.returned')}</th>
+                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium text-right whitespace-nowrap">{t('staking.tableHeaders.amount')}</th>
+                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium text-right whitespace-nowrap">{t('staking.tableHeaders.rewards')}</th>
+                     <th className="px-2 md:px-3 py-1.5 md:py-2 font-medium whitespace-nowrap">{t('staking.tableHeaders.tx')}</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-border-color/30">
@@ -373,7 +375,7 @@ const StakingPage: React.FC = () => {
             {/* Currently Staked Card */}
             {isMobileOrTablet ? (
                <Card className="p-3 flex flex-col items-center justify-center text-center">
-                  <span className="text-[9px] font-medium text-accent-primary/80 uppercase tracking-wider mb-1">SAL Staked</span>
+                  <span className="text-[9px] font-medium text-accent-primary/80 uppercase tracking-wider mb-1">{t('staking.salStaked')}</span>
                   <p className="text-lg font-mono font-semibold text-white">
                      {isDataLoading ? (
                         <span className="text-text-muted animate-pulse">...</span>
@@ -388,7 +390,7 @@ const StakingPage: React.FC = () => {
                      <div className="w-8 h-8 p-1.5 bg-accent-primary/20 text-accent-primary rounded-lg flex items-center justify-center">
                         <Layers className="w-5 h-5" />
                      </div>
-                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">Currently Staked</h3>
+                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">{t('staking.currentlyStaked')}</h3>
                   </div>
                   <p className="text-3xl font-mono font-bold text-white mt-1">
                      {isDataLoading ? (
@@ -403,7 +405,7 @@ const StakingPage: React.FC = () => {
             {/* Total Rewards Card */}
             {isMobileOrTablet ? (
                <Card className="p-3 flex flex-col items-center justify-center text-center">
-                  <span className="text-[9px] font-medium text-accent-success/80 uppercase tracking-wider mb-1">Yield Earned</span>
+                  <span className="text-[9px] font-medium text-accent-success/80 uppercase tracking-wider mb-1">{t('staking.yieldEarned')}</span>
                   <p className="text-lg font-mono font-semibold text-white">
                      {isDataLoading ? (
                         <span className="text-text-muted animate-pulse">...</span>
@@ -418,7 +420,7 @@ const StakingPage: React.FC = () => {
                      <div className="w-8 h-8 p-1.5 bg-accent-success/20 text-accent-success rounded-lg flex items-center justify-center">
                         <TrendingUp className="w-5 h-5" />
                      </div>
-                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">Yield Earned</h3>
+                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">{t('staking.yieldEarned')}</h3>
                   </div>
                   <p className="text-3xl font-mono font-bold text-white mt-1">
                      {isDataLoading ? (
@@ -433,7 +435,7 @@ const StakingPage: React.FC = () => {
             {/* Current APY Card */}
             {isMobileOrTablet ? (
                <Card className="p-3 flex flex-col items-center justify-center text-center">
-                  <span className="text-[9px] font-medium text-accent-warning/80 uppercase tracking-wider mb-1">Current APY</span>
+                  <span className="text-[9px] font-medium text-accent-warning/80 uppercase tracking-wider mb-1">{t('staking.currentApy')}</span>
                   <p className="text-lg font-mono font-semibold text-white">
                      {apyLoading ? (
                         <span className="text-text-muted animate-pulse">...</span>
@@ -450,7 +452,7 @@ const StakingPage: React.FC = () => {
                      <div className="w-8 h-8 p-1.5 bg-accent-warning/20 text-accent-warning rounded-lg flex items-center justify-center">
                         <Clock className="w-5 h-5" />
                      </div>
-                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">Current APY</h3>
+                     <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider leading-tight">{t('staking.currentApy')}</h3>
                   </div>
                   <p className="text-3xl font-mono font-bold text-white mt-1">
                      {apyLoading ? (
@@ -474,24 +476,24 @@ const StakingPage: React.FC = () => {
                <div className={`grid grid-cols-2 gap-3 mb-12 ${!isMobileOrTablet ? 'lg:hidden' : ''}`}>
                   <Button variant="secondary" className="py-4" onClick={() => setIsActiveStakesOpen(true)}>
                      <CheckCircle2 className="mr-2 w-4 h-4" />
-                     Active Stakes
+                     {t('staking.activeStakes')}
                   </Button>
                   <Button variant="secondary" className="py-4" onClick={() => setIsHistoryOpen(true)}>
                      <History className="mr-2 w-4 h-4" />
-                     Stake History
+                     {t('staking.stakeHistory')}
                   </Button>
                </div>
 
                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                   <Layers className="text-accent-secondary w-5 h-5" />
-                  Create New Stake
+                  {t('staking.createNewStake')}
                </h3>
 
                <div className="space-y-6 flex-1 flex flex-col">
                   <div className="space-y-2">
                      <div className="flex justify-between text-xs font-medium">
-                        <span className="text-text-secondary uppercase tracking-wider">Amount</span>
-                        <span className="text-text-muted">Available: <span className="text-white font-mono">{formatSAL(wallet.balance.unlockedBalanceSAL)} SAL</span></span>
+                        <span className="text-text-secondary uppercase tracking-wider">{t('staking.amount')}</span>
+                        <span className="text-text-muted">{t('send.available')}: <span className="text-white font-mono">{formatSAL(wallet.balance.unlockedBalanceSAL)} SAL</span></span>
                      </div>
                      <div className="relative">
                         <Input
@@ -505,7 +507,7 @@ const StakingPage: React.FC = () => {
                            className="font-mono pr-16 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                            disabled={isStaking}
                         />
-                        <button onClick={handleMax} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-accent-primary hover:text-accent-primary/80" disabled={isStaking}>MAX</button>
+                        <button onClick={handleMax} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-accent-primary hover:text-accent-primary/80" disabled={isStaking}>{t('common.max')}</button>
                      </div>
                      {/* Validation Message */}
                      {validationState && (
@@ -518,25 +520,25 @@ const StakingPage: React.FC = () => {
 
                   <div className="bg-bg-secondary/50 rounded-xl p-4 border border-border-color/50 space-y-2">
                      <div className="flex justify-between text-sm">
-                        <span className="text-text-muted">Block Height Unlock</span>
+                        <span className="text-text-muted">{t('staking.blockHeightUnlock')}</span>
                         <span className="text-white font-mono">{((wallet.syncStatus?.daemonHeight || 0) + 21601).toLocaleString()}</span>
                      </div>
                      <div className="flex justify-between text-sm">
                         <span className="text-text-muted flex items-center gap-1">
-                           Est. Rewards
+                           {t('staking.estRewards')}
                            <span className="relative group">
                               <span className="w-4 h-4 rounded-full border border-text-muted/50 text-text-muted/70 text-[10px] flex items-center justify-center cursor-help hover:border-accent-primary hover:text-accent-primary transition-colors">?</span>
                               <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-bg-primary border border-border-color rounded-lg text-xs text-text-secondary w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-lg">
-                                 This is only an estimate based on the current APY. Actual rewards may vary as the network staking rate fluctuates.
+                                 {t('staking.estRewardsTooltip')}
                               </span>
                            </span>
                         </span>
                         <span className="text-accent-success font-mono">+{estimatedReturns} SAL</span>
                      </div>
                      <div className="flex justify-between text-sm">
-                        <span className="text-text-muted">Unlock Date (~30 Days)</span>
+                        <span className="text-text-muted">{t('staking.unlockDate')}</span>
                         <span className="text-white font-mono">
-                           {new Date(Date.now() + parseInt(stakeDuration) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                           {new Date(Date.now() + parseInt(stakeDuration) * 24 * 60 * 60 * 1000).toLocaleDateString(i18n.language)}
                         </span>
                      </div>
                   </div>
@@ -566,11 +568,11 @@ const StakingPage: React.FC = () => {
                         {isStaking ? (
                            <>
                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                              Creating Stake...
+                              {t('staking.creatingStake')}
                            </>
                         ) : (
                            <>
-                              Stake Assets
+                              {t('staking.stakeAssets')}
                               <ArrowUpRight className="ml-2 w-[1.125rem] h-[1.125rem]" />
                            </>
                         )}
@@ -585,7 +587,7 @@ const StakingPage: React.FC = () => {
             <Card className={`hidden flex-col h-full overflow-hidden ${!isMobileOrTablet ? 'lg:flex' : ''}`}>
                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <History className="text-text-secondary w-5 h-5" />
-                  Staking History
+                  {t('staking.stakeHistory')}
                   {cachedHistory.length > 0 && (
                      <span className="text-sm font-normal text-text-muted">({cachedHistory.length})</span>
                   )}
@@ -598,18 +600,18 @@ const StakingPage: React.FC = () => {
          < Card className="hidden lg:block" >
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                <CheckCircle2 className="text-accent-success w-5 h-5" />
-               Active Stakes
+               {t('staking.activeStakes')}
                <span className="text-sm font-normal text-text-muted">({activeStakes.length})</span>
             </h3>
             <ActiveStakesList />
          </Card>
 
          {/* Mobile Overlays */}
-         <Overlay isOpen={isActiveStakesOpen} onClose={() => setIsActiveStakesOpen(false)} title="Active Stakes" mobileTopOffset={77}>
+         <Overlay isOpen={isActiveStakesOpen} onClose={() => setIsActiveStakesOpen(false)} title={t('staking.activeStakes')} mobileTopOffset={77}>
             <ActiveStakesList />
          </Overlay>
 
-         <Overlay isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Staking History" mobileTopOffset={77}>
+         <Overlay isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title={t('staking.stakeHistory')} mobileTopOffset={77}>
             <HistoryList />
          </Overlay>
       </div>

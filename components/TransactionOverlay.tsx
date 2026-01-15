@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ExternalLink, X } from './Icons';
 import { Overlay } from './UIComponents';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
@@ -14,6 +15,7 @@ interface TransactionOverlayProps {
 }
 
 const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose, txId }) => {
+    const { t } = useTranslation();
     if (!isOpen || !txId) return null;
 
     const Content = () => (
@@ -21,7 +23,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
             {/* Header for Inline/Desktop Mode */}
             {!isMobileOrTablet && (
                 <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0">
-                    <h3 className="font-bold text-lg text-white">Transaction Details</h3>
+                    <h3 className="font-bold text-lg text-white">{t('transactions.details')}</h3>
                     <button onClick={onClose} className="text-text-muted hover:text-white transition-colors">
                         <X size={20} />
                     </button>
@@ -35,7 +37,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
                         <ExternalLink size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs text-text-muted uppercase tracking-wider">Transaction Hash</p>
+                        <p className="text-xs text-text-muted uppercase tracking-wider">{t('transactions.hash')}</p>
                         <p className="text-sm font-mono text-white truncate text-ellipsis">{txId}</p>
                     </div>
                 </div>
@@ -52,7 +54,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
                 {/* Footer info */}
                 <div className="pt-4 text-center shrink-0">
                     <p className="text-xs text-text-muted">
-                        Powered by salvium.tools explorer
+                        {t('transactions.poweredBy')}
                     </p>
                 </div>
             </div>
@@ -73,7 +75,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
         <Overlay
             isOpen={isOpen}
             onClose={onClose}
-            title="Transaction Details"
+            title={t('transactions.details')}
             className="md:max-w-5xl md:h-[85vh]"
         >
             <Content />
