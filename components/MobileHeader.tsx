@@ -29,8 +29,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
     return (
         <>
             <header
+                id="mobile-header"
                 className="fixed top-0 left-0 right-0 bg-[#0b0b15]/90 backdrop-blur-xl border-b border-white/5 z-50 lg:hidden flex items-center justify-between px-4 transition-all duration-200"
-                style={{ paddingTop: 'env(safe-area-inset-top)', height: 'calc(56px + env(safe-area-inset-top))' }}
+                style={{ paddingTop: 'env(safe-area-inset-top)', height: 'var(--mobile-header-height)' }}
             >
                 {/* Left: Logo & Title */}
                 <div className="flex items-center gap-2.5">

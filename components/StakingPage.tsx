@@ -602,17 +602,17 @@ const StakingPage: React.FC = () => {
                <span className="text-sm font-normal text-text-muted">({activeStakes.length})</span>
             </h3>
             <ActiveStakesList />
-         </Card >
+         </Card>
 
          {/* Mobile Overlays */}
-         < Overlay isOpen={isActiveStakesOpen} onClose={() => setIsActiveStakesOpen(false)} title="Active Stakes" >
+         <Overlay isOpen={isActiveStakesOpen} onClose={() => setIsActiveStakesOpen(false)} title="Active Stakes" mobileTopOffset={77}>
             <ActiveStakesList />
-         </Overlay >
+         </Overlay>
 
-         <Overlay isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Staking History">
+         <Overlay isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Staking History" mobileTopOffset={77}>
             <HistoryList />
          </Overlay>
-      </div >
+      </div>
    );
 };
 

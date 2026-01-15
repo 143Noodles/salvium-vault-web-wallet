@@ -303,6 +303,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     // Flag to track if we just restored from vault file (needs spent status sync)
     const restoredFromVaultRef = React.useRef(false);
 
+    // Flag to trigger a full rescan after current scan completes (cache recovery)
+    const needsFullRescanRef = React.useRef(false);
+
     // Ref to hold latest startScan function (avoids dependency churn in useEffects)
     const startScanRef = React.useRef<(fromHeight?: number) => Promise<void>>();
 
@@ -1767,15 +1770,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                         // INCREMENTAL SCAN but CACHE MISSING/EMPTY
                         // This is a dangerous state: WASM only has partial history (incremental),
                         // but we have no cached base state to add it to.
-                        // Usage of 'currentBalance' here would result in 0 or partial balance (DATA LOSS VISUAL).
-                        console.warn('[WalletContext] ⚠️ Incremental scan completed but cache missing! WASM balance may be incomplete.');
+                        // AUTO-RECOVERY: Reset height to 0 and trigger full rescan
+                        console.warn('[WalletContext] Cache missing after incremental scan - triggering full rescan for recovery');
 
-                        // If WASM reported a balance, use it (better than 0).
-                        // If WASM reported 0, but we suspect we should have balance... strictly we can't know.
-                        // But we trust WASM for now.
+                        // Reset height in localStorage to force full rescan
+                        try {
+                            const walletJson = localStorage.getItem('salvium_wallet');
+                            if (walletJson) {
+                                const wallet = JSON.parse(walletJson);
+                                wallet.height = 0;
+                                localStorage.setItem('salvium_wallet', JSON.stringify(wallet));
+                            }
+                        } catch (e) {
+                            console.error('[WalletContext] Failed to reset height for recovery:', e);
+                        }
+
+                        // Set flag to trigger full rescan after this scan completes
+                        needsFullRescanRef.current = true;
+
+                        // Use current balance temporarily (will be corrected after full rescan)
                         finalBalance = currentBalance;
-
-                        // Ideally we should trigger a full rescan here if we detect this state?
                     } else {
                         // FULL SCAN from block 0 - WASM balance is authoritative
                         finalBalance = currentBalance;
@@ -2022,6 +2036,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             scanInProgressRef.current = false;
             setIsScanning(false);
             setScanProgress(null);
+
+            // AUTO-RECOVERY: If cache was missing, trigger full rescan from block 0
+            if (needsFullRescanRef.current) {
+                needsFullRescanRef.current = false;
+                console.log('[WalletContext] Starting full rescan for cache recovery...');
+                setTimeout(() => startScan(0), 500);
+            }
         }
     };
 

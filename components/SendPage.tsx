@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
@@ -8,7 +8,9 @@ import { Card, Button, Input, Overlay, Badge } from './UIComponents';
 import { Send, User, Clock, ArrowRight, Wallet, AlertCircle, CheckCircle2, UserPlus, Search, X, Edit2, Trash2, BookOpen, Camera } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { formatSAL } from '../utils/format';
-import QRScanner from './QRScanner';
+
+// Lazy load QRScanner - only needed when user clicks camera icon
+const QRScanner = lazy(() => import('./QRScanner'));
 
 interface SendPageProps {
   initialParams?: {
@@ -205,7 +207,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
   );
 
   // Address Book Component (Reusable for Overlay and Desktop Sidebar)
-  const AddressBookList = () => (
+  const AddressBookList = ({ hideAddButton = false }: { hideAddButton?: boolean }) => (
     <div className="flex flex-col h-full">
       <div className="relative mb-4 flex-shrink-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-[0.875rem] h-[0.875rem]" />
@@ -271,12 +273,14 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         )}
       </div>
 
-      <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
-        <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
-          <UserPlus className="mr-2 w-4 h-4" />
-          Add New Address
-        </Button>
-      </div>
+      {!hideAddButton && (
+        <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
+          <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
+            <UserPlus className="mr-2 w-4 h-4" />
+            Add New Address
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -451,15 +455,13 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
 
       {/* OVERLAY for Address Book on Mobile */}
       <Overlay isOpen={isAddressBookOpen} onClose={() => setIsAddressBookOpen(false)} title="Address Book">
-        <div className="relative h-full flex flex-col">
-          <button
-            onClick={openAddModal}
-            className="absolute bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-          </button>
-          <AddressBookList />
-        </div>
+        <button
+          onClick={openAddModal}
+          className="fixed bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
+        >
+          <UserPlus className="w-5 h-5" />
+        </button>
+        <AddressBookList hideAddButton />
       </Overlay>
 
       {/* Add/Edit Contact Modal - Works inside Overlay or Desktop */}
@@ -527,10 +529,19 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
         </div>
       )}
       {isScannerOpen && (
-        <QRScanner
-          onScan={handleScan}
-          onClose={() => setIsScannerOpen(false)}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
+            <div className="text-white text-center">
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+              <p>Loading scanner...</p>
+            </div>
+          </div>
+        }>
+          <QRScanner
+            onScan={handleScan}
+            onClose={() => setIsScannerOpen(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

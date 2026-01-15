@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS variable for mobile header height */
+:root {
+    --mobile-header-height: calc(56px + env(safe-area-inset-top));
+}
+
 @layer base {
 
     html,

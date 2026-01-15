@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 
 // Device detection helpers for responsive layouts
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
-import { QRCodeSVG } from 'qrcode.react';
+
+// Lazy load QR code generator - only needed on Receive tab
+const QRCodeSVG = lazy(() => import('qrcode.react').then(mod => ({ default: mod.QRCodeSVG })));
+
 import { Card, Button, Badge, Input, Overlay, TruncatedAddress } from './UIComponents';
 import { Download, QrCode, Copy, Check, Plus, MoreHorizontal, Layers, X, Search } from './Icons';
 import { useWallet } from '../services/WalletContext';
@@ -64,7 +67,7 @@ const ReceivePage: React.FC = () => {
       sub.address.toLowerCase().includes(searchTerm.toLowerCase())
    );
 
-   const SubaddressList = () => (
+   const SubaddressList = ({ hideAddButton = false }: { hideAddButton?: boolean }) => (
       <div className="flex flex-col h-full">
          <div className="relative mb-4 flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-[0.875rem] h-[0.875rem]" />
@@ -117,12 +120,14 @@ const ReceivePage: React.FC = () => {
                ))
             )}
          </div>
-         <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
-            <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
-               <Plus className="mr-2 w-4 h-4" />
-               Add New Subaddress
-            </Button>
-         </div>
+         {!hideAddButton && (
+            <div className="pt-4 border-t border-white/5 flex-shrink-0 mt-auto">
+               <Button variant="secondary" className="w-full py-3" onClick={openAddModal}>
+                  <Plus className="mr-2 w-4 h-4" />
+                  Add New Subaddress
+               </Button>
+            </div>
+         )}
       </div>
    );
 
@@ -152,21 +157,27 @@ const ReceivePage: React.FC = () => {
                   <div className="relative bg-white p-6 rounded-2xl w-fit mx-auto">
                      {/* QR Code with SAL logo in center */}
                      <div className="w-[14rem] h-[14rem]">
-                        <QRCodeSVG
-                           value={primaryAddress !== 'Loading...' ? primaryAddress : 'salvium'}
-                           size={224}
-                           level="H"
-                           includeMargin={false}
-                           imageSettings={{
-                              src: salLogo,
-                              x: undefined,
-                              y: undefined,
-                              height: 48,
-                              width: 48,
-                              excavate: true,
-                           }}
-                           style={{ width: '100%', height: '100%' }}
-                        />
+                        <Suspense fallback={
+                           <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                              <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                           </div>
+                        }>
+                           <QRCodeSVG
+                              value={primaryAddress !== 'Loading...' ? primaryAddress : 'salvium'}
+                              size={224}
+                              level="H"
+                              includeMargin={false}
+                              imageSettings={{
+                                 src: salLogo,
+                                 x: undefined,
+                                 y: undefined,
+                                 height: 48,
+                                 width: 48,
+                                 excavate: true,
+                              }}
+                              style={{ width: '100%', height: '100%' }}
+                           />
+                        </Suspense>
                      </div>
                   </div>
                </div>
@@ -232,15 +243,13 @@ const ReceivePage: React.FC = () => {
 
          {/* OVERLAY for Subaddresses on Mobile */}
          <Overlay isOpen={isSubaddressOpen} onClose={() => setIsSubaddressOpen(false)} title="Manage Subaddresses">
-            <div className="relative h-full">
-               <button
-                  onClick={openAddModal}
-                  className="absolute bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
-               >
-                  <Plus className="w-5 h-5" />
-               </button>
-               <SubaddressList />
-            </div>
+            <button
+               onClick={openAddModal}
+               className="fixed bottom-24 right-4 z-10 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:bg-accent-primary/90 transition-colors"
+            >
+               <Plus className="w-5 h-5" />
+            </button>
+            <SubaddressList hideAddButton />
          </Overlay>
 
          {/* Add Subaddress Modal */}

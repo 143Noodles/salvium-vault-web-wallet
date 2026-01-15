@@ -83,6 +83,19 @@ const AppContent: React.FC = () => {
   const [autoLockMinutes, setAutoLockMinutes] = useState(15);
   const lastActivityRef = useRef(Date.now());
 
+  // Storage persistence banner state
+  const [showStorageBanner, setShowStorageBanner] = useState(false);
+  const deferredInstallPromptRef = useRef<any>(null);
+  const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isChromiumBrowser = useRef(
+    !isSafariBrowser && (
+      /Chrome/.test(navigator.userAgent) ||
+      /Edg/.test(navigator.userAgent) ||
+      /OPR/.test(navigator.userAgent) ||
+      /Brave/.test(navigator.userAgent)
+    )
+  );
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -168,14 +181,79 @@ const AppContent: React.FC = () => {
     };
   }, [appState, autoLockEnabled, autoLockMinutes, lockWallet]);
 
+  // Capture PWA install prompt for Chromium browsers
   useEffect(() => {
-    const requestPersistence = async () => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      deferredInstallPromptRef.current = e;
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  useEffect(() => {
+    const checkAndRequestPersistence = async () => {
       if (navigator.storage && navigator.storage.persist) {
-        await navigator.storage.persist();
+        // Check if already persisted
+        const isPersisted = await navigator.storage.persisted();
+        if (isPersisted) {
+          setShowStorageBanner(false);
+          return;
+        }
+
+        // Check if user previously dismissed the banner
+        const bannerDismissed = localStorage.getItem('salvium_storage_banner_dismissed');
+        if (bannerDismissed) {
+          return;
+        }
+
+        // Try to request persistence (Chrome may auto-grant based on engagement)
+        const granted = await navigator.storage.persist();
+        if (!granted) {
+          // Show banner if not granted and not on mobile (mobile forces PWA)
+          // Skip Safari - no actionable solution available
+          if (!isMobileOrTablet && !isSafariBrowser) {
+            setShowStorageBanner(true);
+          }
+        }
       }
     };
-    requestPersistence();
+    checkAndRequestPersistence();
   }, []);
+
+  const handleRequestPersistence = async () => {
+    // On Chromium browsers, prompt for PWA install (which grants persistence)
+    if (isChromiumBrowser.current && deferredInstallPromptRef.current) {
+      try {
+        deferredInstallPromptRef.current.prompt();
+        const { outcome } = await deferredInstallPromptRef.current.userChoice;
+        if (outcome === 'accepted') {
+          setShowStorageBanner(false);
+          deferredInstallPromptRef.current = null;
+        }
+      } catch (e) {
+        console.warn('[App] PWA install prompt failed:', e);
+      }
+      return;
+    }
+
+    // On Firefox and other browsers, request persistence directly (shows prompt)
+    if (navigator.storage && navigator.storage.persist) {
+      const granted = await navigator.storage.persist();
+      if (granted) {
+        setShowStorageBanner(false);
+      }
+    }
+  };
+
+  const dismissStorageBanner = () => {
+    setShowStorageBanner(false);
+    localStorage.setItem('salvium_storage_banner_dismissed', 'true');
+  };
 
   useEffect(() => {
     let wakeLock: any = null;
@@ -424,11 +502,43 @@ const AppContent: React.FC = () => {
         )}
 
         <main className={`flex-1 ${isDesktopOnly ? 'ml-72' : ''} min-w-0 relative z-10 w-full flex flex-col`}>
+          {/* Storage Persistence Warning Banner */}
+          {showStorageBanner && (
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3">
+              <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-amber-200 text-sm">
+                  <Database size={18} className="text-amber-400 shrink-0" />
+                  <span>
+                    <strong>Storage not persistent.</strong>{' '}
+                    {isChromiumBrowser.current
+                      ? 'Install this app to protect your wallet data from being cleared.'
+                      : 'Your wallet data may be lost if the browser clears storage.'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleRequestPersistence}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {isChromiumBrowser.current && deferredInstallPromptRef.current ? 'Install App' : 'Enable'}
+                  </button>
+                  <button
+                    onClick={dismissStorageBanner}
+                    className="p-1.5 text-amber-400 hover:text-amber-200 transition-colors"
+                    title="Dismiss"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div
             className={`
-              w-full 
-              px-4 md:px-8 
-              max-w-[1600px] mx-auto 
+              w-full
+              px-4 md:px-8
+              max-w-[1600px] mx-auto
               overflow-y-auto custom-scrollbar
               ${isMobileOrTablet
                 ? 'pt-[calc(88px+env(safe-area-inset-top))] pb-[calc(76px+env(safe-area-inset-bottom))] h-full'

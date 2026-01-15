@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { X } from './Icons';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
+import { X } from './Icons';
 
-// Device detection helpers for responsive layouts
+// Device detection helpers for responsive layouts (matching other components)
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice;
 
@@ -143,24 +143,19 @@ interface OverlayProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  mobileTopOffset?: number;
 }
 
-export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, children, className = '' }) => {
+export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, children, className = '', mobileTopOffset = 96 }) => {
+  // Use fixed offset - customizable for mobile/tablet, 0 for desktop
+  const topOffset = isMobileOrTablet ? mobileTopOffset : 0;
+
   if (!isOpen) return null;
-
-  // On mobile/tablet, position below the header; on desktop, use full screen
-  const containerStyle: React.CSSProperties = isMobileOrTablet
-    ? { top: 'calc(56px + env(safe-area-inset-top))', left: 0, right: 0, bottom: 0 }
-    : { top: 0, left: 0, right: 0, bottom: 0 };
-
-  const contentStyle: React.CSSProperties = isMobileOrTablet
-    ? { height: '100%', marginBottom: 'env(safe-area-inset-bottom)' }
-    : { height: 'calc(100dvh - (56px + env(safe-area-inset-top) + env(safe-area-inset-bottom)))', marginBottom: 'env(safe-area-inset-bottom)' };
 
   return (
     <div
-      className="fixed z-[100] flex items-end md:items-center justify-center sm:p-4"
-      style={containerStyle}
+      className="fixed z-[100] flex items-end lg:items-center justify-center lg:p-4"
+      style={{ top: topOffset, left: 0, right: 0, bottom: 0 }}
     >
       {/* Backdrop */}
       <div
@@ -170,8 +165,8 @@ export const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, title, childr
       ></div>
 
       {/* Content */}
-      <div className={`relative w-full md:max-w-lg bg-[#131320] md:rounded-2xl rounded-t-2xl border-t md:border border-white/10 shadow-2xl flex flex-col md:h-auto animate-slide-up ${className}`}
-        style={contentStyle}
+      <div className={`relative w-full lg:max-w-lg bg-[#131320] lg:rounded-2xl rounded-t-2xl border-t lg:border border-white/10 shadow-2xl flex flex-col lg:h-auto lg:max-h-[80vh] animate-slide-up ${className}`}
+        style={{ height: '100%', marginBottom: 'env(safe-area-inset-bottom)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0 rounded-t-2xl">

@@ -46,19 +46,15 @@ export default defineConfig(() => {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false,
-      // Disable minification completely to avoid SES/MetaMask conflicts
-      // The SES lockdown from MetaMask breaks minified React 19 code
-      minify: false,
+      minify: 'esbuild',
       target: 'es2020',
       rollupOptions: {
         output: {
-          // Disable code splitting - put everything in one bundle
-          // This avoids circular dependency issues with dynamic imports
+          // Enable code splitting for lazy-loaded chunks (QR scanner, charts, etc.)
+          // This allows parallel download and deferred loading of heavy libraries
           entryFileNames: 'assets/vault-[hash].js',
           chunkFileNames: 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name]-[hash][extname]',
-          manualChunks: undefined,
-          inlineDynamicImports: true,
           // Use ES module format (more compatible than IIFE with modern tooling)
           format: 'es'
         }
