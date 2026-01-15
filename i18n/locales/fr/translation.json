@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Faire un Don à Salvium.Tools",
-      "description": "Il s'agit d'un projet financé par la communauté et les dons serviront à couvrir les frais de serveur. Votre soutien aide à maintenir le coffre sécurisé, rapide et en constante amélioration.",
+      "description": "Aidez à maintenir Salvium Vault en fonctionnement. Chaque don soutient les serveurs et le développement.",
       "button": "Faire un Don"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "Montant",
     "status": "Statut",
     "broadcasting": "Diffusion",
-    "blocksRemaining": "{{blocks}} blocs restants",
+    "blocksRemaining": "{{count}} blocs restants",
     "loadMore": "Charger Plus",
     "showing": "Affichage {{start}}-{{end}} sur {{total}} transactions",
     "page": "Page {{current}} sur {{total}}",

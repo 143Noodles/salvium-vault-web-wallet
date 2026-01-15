@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Doneer aan Salvium.Tools",
-      "description": "Dit is een door de gemeenschap gefinancierd project en donaties gaan naar serverkosten. Je steun helpt om de kluis veilig, snel en constant verbeterend te houden.",
+      "description": "Help Salvium Vault draaiende te houden. Elke donatie ondersteunt servers en ontwikkeling.",
       "button": "Nu Doneren"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "Bedrag",
     "status": "Status",
     "broadcasting": "Uitzenden",
-    "blocksRemaining": "{{blocks}} blokken resterend",
+    "blocksRemaining": "{{count}} blokken resterend",
     "loadMore": "Meer Laden",
     "showing": "Toon {{start}}-{{end}} van {{total}} transacties",
     "page": "Pagina {{current}} van {{total}}",

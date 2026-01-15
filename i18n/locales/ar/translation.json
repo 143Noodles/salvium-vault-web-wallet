@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "تبرع لـ Salvium.Tools",
-      "description": "هذا مشروع ممول من المجتمع وستذهب التبرعات لتكاليف الخادم. دعمك يساعد في الحفاظ على الخزنة آمنة وسريعة ومتطورة باستمرار.",
+      "description": "ساعد في الحفاظ على تشغيل Salvium Vault. كل تبرع يدعم الخوادم والتطوير.",
       "button": "تبرع الآن"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "المبلغ",
     "status": "الحالة",
     "broadcasting": "جار البث",
-    "blocksRemaining": "{{blocks}} كتلة متبقية",
+    "blocksRemaining": "{{count}} كتلة متبقية",
     "loadMore": "تحميل المزيد",
     "showing": "عرض {{start}}-{{end}} من {{total}} معاملة",
     "page": "صفحة {{current}} من {{total}}",

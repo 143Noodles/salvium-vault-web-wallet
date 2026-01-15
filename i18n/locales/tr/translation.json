@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Salvium.Tools'a Bağış Yapın",
-      "description": "Bu topluluk tarafından finanse edilen bir projedir ve bağışlar sunucu maliyetlerine gidecektir. Desteğiniz kasanın güvenli, hızlı ve sürekli gelişmesine yardımcı olur.",
+      "description": "Salvium Vault'un çalışmasına yardım edin. Her bağış sunucuları ve geliştirmeyi destekler.",
       "button": "Şimdi Bağış Yap"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "Miktar",
     "status": "Durum",
     "broadcasting": "Yayınlanıyor",
-    "blocksRemaining": "{{blocks}} blok kaldı",
+    "blocksRemaining": "{{count}} blok kaldı",
     "loadMore": "Daha Fazla Yükle",
     "showing": "{{total}} işlemden {{start}}-{{end}} gösteriliyor",
     "page": "Sayfa {{current}} / {{total}}",

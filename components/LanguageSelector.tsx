@@ -23,9 +23,9 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = '' }) =
       setIsOpen(false);
    };
 
-   // Calculate dropdown position when opening
-   useEffect(() => {
-      if (isOpen && buttonRef.current) {
+   // Calculate dropdown position and open - done synchronously to avoid flicker
+   const handleToggle = () => {
+      if (!isOpen && buttonRef.current) {
          const rect = buttonRef.current.getBoundingClientRect();
          setDropdownStyle({
             position: 'fixed',
@@ -34,7 +34,8 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = '' }) =
             minWidth: 200,
          });
       }
-   }, [isOpen]);
+      setIsOpen(!isOpen);
+   };
 
    // Close dropdown when clicking outside
    useEffect(() => {
@@ -58,7 +59,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ className = '' }) =
          {/* Compact Selection Button */}
          <button
             ref={buttonRef}
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={handleToggle}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-bg-primary hover:border-white/20 transition-all text-left text-sm ${className}`}
          >
             <span className="text-base">{currentLang.flag}</span>

@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Salvium.Tools에 기부",
-      "description": "이것은 커뮤니티가 지원하는 프로젝트이며 기부금은 서버 비용에 사용됩니다. 여러분의 지원은 금고를 안전하고, 빠르며, 지속적으로 개선하는 데 도움이 됩니다.",
+      "description": "Salvium Vault 운영을 도와주세요. 모든 기부는 서버와 개발을 지원합니다.",
       "button": "지금 기부"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "금액",
     "status": "상태",
     "broadcasting": "브로드캐스팅",
-    "blocksRemaining": "{{blocks}}블록 남음",
+    "blocksRemaining": "{{count}}블록 남음",
     "loadMore": "더 보기",
     "showing": "{{total}}개 중 {{start}}-{{end}} 표시",
     "page": "{{total}} 중 {{current}} 페이지",

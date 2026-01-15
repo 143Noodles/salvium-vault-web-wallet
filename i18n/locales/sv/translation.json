@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Donera till Salvium.Tools",
-      "description": "Detta är ett samhällsfinansierat projekt och donationer går till serverkostnader. Ditt stöd hjälper till att hålla valvet säkert, snabbt och ständigt förbättrat.",
+      "description": "Hjälp till att hålla Salvium Vault igång. Varje donation stöder servrar och utveckling.",
       "button": "Donera Nu"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "Belopp",
     "status": "Status",
     "broadcasting": "Sänder",
-    "blocksRemaining": "{{blocks}} block kvar",
+    "blocksRemaining": "{{count}} block kvar",
     "loadMore": "Ladda Mer",
     "showing": "Visar {{start}}-{{end}} av {{total}} transaktioner",
     "page": "Sida {{current}} av {{total}}",

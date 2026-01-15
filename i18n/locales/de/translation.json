@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "An Salvium.Tools Spenden",
-      "description": "Dies ist ein von der Community finanziertes Projekt und Spenden fließen in die Serverkosten. Ihre Unterstützung hilft, den Tresor sicher, schnell und ständig verbessert zu halten.",
+      "description": "Hilf dabei, Salvium Vault am Laufen zu halten. Jede Spende unterstützt Server und Entwicklung.",
       "button": "Jetzt Spenden"
     }
   },
@@ -362,7 +362,7 @@
     "amount": "Betrag",
     "status": "Status",
     "broadcasting": "Übertragung",
-    "blocksRemaining": "{{blocks}} Blöcke verbleibend",
+    "blocksRemaining": "{{count}} Blöcke verbleibend",
     "loadMore": "Mehr Laden",
     "showing": "Zeige {{start}}-{{end}} von {{total}} Transaktionen",
     "page": "Seite {{current}} von {{total}}",

@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "捐赠给Salvium.Tools",
-      "description": "这是一个社区资助的项目，捐款将用于服务器成本。您的支持有助于保持保险库安全、快速并不断改进。",
+      "description": "帮助保持Salvium Vault运行。每一笔捐款都支持服务器和开发。",
       "button": "立即捐赠"
     }
   },

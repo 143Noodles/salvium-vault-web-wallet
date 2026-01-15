@@ -225,7 +225,7 @@
     },
     "donate": {
       "title": "Donate to Salvium.Tools",
-      "description": "This is a community funded project and donations will go to server costs. Your support helps keep the vault secure, fast, and constantly improving.",
+      "description": "Help keep Salvium Vault running. Every donation supports servers and development.",
       "button": "Donate Now"
     }
   },
