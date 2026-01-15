@@ -1,12 +1,36 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, Component, ErrorInfo, ReactNode } from 'react';
 import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
+import { QRCodeSVG as QRCodeDirect } from 'qrcode.react';
 
 // Device detection helpers for responsive layouts
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 
-// Lazy load QR code generator - only needed on Receive tab
-const QRCodeSVG = lazy(() => import('qrcode.react').then(mod => ({ default: mod.QRCodeSVG })));
+// On mobile: use direct import (more reliable), on desktop: lazy load
+const QRCodeLazy = lazy(() => import('qrcode.react').then(mod => ({ default: mod.QRCodeSVG })));
+
+// Error boundary to catch QR code loading failures on mobile
+class QRCodeErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+   constructor(props: { children: ReactNode; fallback: ReactNode }) {
+      super(props);
+      this.state = { hasError: false };
+   }
+
+   static getDerivedStateFromError(_: Error) {
+      return { hasError: true };
+   }
+
+   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+      console.warn('[QRCode] Failed to load:', error, errorInfo);
+   }
+
+   render() {
+      if (this.state.hasError) {
+         return this.props.fallback;
+      }
+      return this.props.children;
+   }
+}
 
 import { Card, Button, Badge, Input, Overlay, TruncatedAddress } from './UIComponents';
 import { Download, QrCode, Copy, Check, Plus, MoreHorizontal, Layers, X, Search } from './Icons';
@@ -157,27 +181,53 @@ const ReceivePage: React.FC = () => {
                   <div className="relative bg-white p-6 rounded-2xl w-fit mx-auto">
                      {/* QR Code with SAL logo in center */}
                      <div className="w-[14rem] h-[14rem]">
-                        <Suspense fallback={
-                           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                              <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                        <QRCodeErrorBoundary fallback={
+                           <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 text-xs text-center p-4">
+                              <span>QR code unavailable.<br/>Copy address below.</span>
                            </div>
                         }>
-                           <QRCodeSVG
-                              value={primaryAddress !== 'Loading...' ? primaryAddress : 'salvium'}
-                              size={224}
-                              level="H"
-                              includeMargin={false}
-                              imageSettings={{
-                                 src: salLogo,
-                                 x: undefined,
-                                 y: undefined,
-                                 height: 48,
-                                 width: 48,
-                                 excavate: true,
-                              }}
-                              style={{ width: '100%', height: '100%' }}
-                           />
-                        </Suspense>
+                           {isMobileOrTablet ? (
+                              // Mobile: Direct import (more reliable), with logo
+                              <QRCodeDirect
+                                 value={primaryAddress !== 'Loading...' ? primaryAddress : 'salvium'}
+                                 size={224}
+                                 level="H"
+                                 includeMargin={false}
+                                 imageSettings={{
+                                    src: salLogo,
+                                    x: undefined,
+                                    y: undefined,
+                                    height: 48,
+                                    width: 48,
+                                    excavate: true,
+                                 }}
+                                 style={{ width: '100%', height: '100%' }}
+                              />
+                           ) : (
+                              // Desktop: Lazy load with logo
+                              <Suspense fallback={
+                                 <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                    <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                 </div>
+                              }>
+                                 <QRCodeLazy
+                                    value={primaryAddress !== 'Loading...' ? primaryAddress : 'salvium'}
+                                    size={224}
+                                    level="H"
+                                    includeMargin={false}
+                                    imageSettings={{
+                                       src: salLogo,
+                                       x: undefined,
+                                       y: undefined,
+                                       height: 48,
+                                       width: 48,
+                                       excavate: true,
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                 />
+                              </Suspense>
+                           )}
+                        </QRCodeErrorBoundary>
                      </div>
                   </div>
                </div>
