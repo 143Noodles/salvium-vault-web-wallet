@@ -222,16 +222,16 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                 onClick={() => onTxClick?.(tx.txid)}
               >
                 {/* Block Height */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-sm font-mono text-accent-primary">
+                <td className="px-4 lg:px-6 py-3 lg:py-4 text-sm font-mono text-accent-primary">
                   {tx.height > 0 ? tx.height : <span className="text-accent-warning">Pending</span>}
                   {/* Mobile date below block height */}
-                  <div className="md:hidden text-[10px] text-text-muted mt-1">
+                  <div className="lg:hidden text-[10px] text-text-muted mt-1">
                     {new Date(tx.timestamp).toLocaleDateString()}
                   </div>
                 </td>
 
                 {/* Date (Desktop) */}
-                <td className="px-4 md:px-6 py-3 md:py-4 hidden md:table-cell">
+                <td className="px-4 lg:px-6 py-3 lg:py-4 hidden lg:table-cell">
                   <div className="flex flex-col">
                     <span className="text-text-primary text-sm">{new Date(tx.timestamp).toLocaleDateString()}</span>
                     <span className="text-text-muted text-xs">{new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -239,14 +239,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                 </td>
 
                 {/* Type & Hash */}
-                <td className="px-4 md:px-6 py-3 md:py-4">
+                <td className="px-4 lg:px-6 py-3 lg:py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-bg-primary border border-border-color group-hover:border-accent-primary/50 transition-colors hidden md:block`}>
+                    <div className={`p-2 rounded-lg bg-bg-primary border border-border-color group-hover:border-accent-primary/50 transition-colors hidden lg:block`}>
                       {getIcon(tx.type, tx.tx_type_label)}
                     </div>
                     <div className="flex flex-col">
                       {/* Mobile: Show Type Label prominently */}
-                      <span className="font-medium text-text-primary text-sm md:text-base">
+                      <span className="font-medium text-text-primary text-sm lg:text-base">
                         {getTypeLabel(tx.type, tx.tx_type_label, tx.asset_type)}
                       </span>
                       {/* Hash below */}
@@ -255,21 +255,21 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                         title="Click to view details"
                       >
                         {/* Shorter hash on mobile */}
-                        <span className="md:hidden">{tx.txid.slice(0, 4)}...{tx.txid.slice(-4)}</span>
-                        <span className="hidden md:inline">{tx.txid.slice(0, 8)}...{tx.txid.slice(-6)}</span>
+                        <span className="lg:hidden">{tx.txid.slice(0, 4)}...{tx.txid.slice(-4)}</span>
+                        <span className="hidden lg:inline">{tx.txid.slice(0, 8)}...{tx.txid.slice(-6)}</span>
                       </span>
                     </div>
                   </div>
                 </td>
 
                 {/* Amount */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-right">
+                <td className="px-4 lg:px-6 py-3 lg:py-4 text-right">
                   <span className={`font-mono font-bold text-sm ${tx.type === 'in' ? 'text-accent-success' : 'text-red-500'
                     }`}>
                     {tx.type === 'in' ? '+' : '-'} {formatSAL(tx.amount)}
                   </span>
                   {/* Status Badge on Mobile (below amount) */}
-                  <div className="md:hidden mt-1 flex justify-end">
+                  <div className="lg:hidden mt-1 flex justify-end">
                     {(() => {
                       const lockStatus = getTxLockStatus(tx, currentHeight);
                       if (tx.pending || lockStatus.confirmations === 0 || (tx.type === 'pending')) {
@@ -284,7 +284,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                 </td>
 
                 {/* Status (Desktop) */}
-                <td className="px-4 md:px-6 py-3 md:py-4 text-right hidden md:table-cell">
+                <td className="px-4 lg:px-6 py-3 lg:py-4 text-right hidden lg:table-cell">
                   {(() => {
                     const lockStatus = getTxLockStatus(tx, currentHeight);
                     // Check for locally-created pending TX first
@@ -312,10 +312,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border-color pt-4 mt-4 px-4 pb-4">
-          <div className="text-text-muted text-sm hidden md:block">
+          <div className="text-text-muted text-sm hidden lg:block">
             Showing {startIndex + 1}-{Math.min(endIndex, transactions.length)} of {transactions.length} transactions
           </div>
-          <div className="text-text-muted text-xs md:hidden">
+          <div className="text-text-muted text-xs lg:hidden">
             Page {currentPage} of {totalPages}
           </div>
 
@@ -331,7 +331,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
             </Button>
 
             {/* Page numbers (Desktop only or simple counter mobile) */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum: number;
                 if (totalPages <= 5) {
