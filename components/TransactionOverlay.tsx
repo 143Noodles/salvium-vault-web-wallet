@@ -244,7 +244,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
                         <div className="p-3 bg-white/5 rounded-xl mb-6">
                             <p className="text-xs text-text-muted mb-1">{t('transactions.amount')}</p>
                             <p className="text-lg font-bold text-white">
-                                {transaction ? formatSAL(transaction.amount) : '0'} {transaction?.asset_type || 'SAL'}
+                                {transaction ? formatSAL(transaction.amount) : '0'} SAL
                             </p>
                         </div>
 
