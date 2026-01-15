@@ -340,11 +340,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     // Price history for chart (hourly prices from MEXC via Explorer API)
     const [priceHistory, setPriceHistory] = useState<[number, number][]>([]);
 
-    // Fetch SAL price from API
+    // Fetch SAL price from Explorer API (CoinGecko)
     useEffect(() => {
         const fetchPrice = async () => {
             try {
-                const response = await fetch('/vault/api/price');
+                const response = await fetch('https://salvium.tools/api/price');
                 const data = await response.json();
                 if (data.price) {
                     setSalPrice(parseFloat(data.price));
@@ -355,8 +355,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         };
 
         fetchPrice();
-        // Refresh price every 60 seconds
-        const interval = setInterval(fetchPrice, 60000);
+        // Refresh price every 2 minutes (matches Explorer cache)
+        const interval = setInterval(fetchPrice, 120000);
         return () => clearInterval(interval);
     }, []);
 
