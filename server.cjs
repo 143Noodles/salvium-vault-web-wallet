@@ -7506,38 +7506,6 @@ app.get(['/api/debug-output', '/vault/api/debug-output'], async (req, res) => {
 });
 
 // ============================================================================
-// PRICE PROXY ROUTE - Direct MEXC API (Independent from Explorer)
-// ============================================================================
-app.get('/api/price', async (req, res) => {
-    try {
-        const response = await axiosInstance.get('https://api.mexc.com/api/v3/ticker/24hr?symbol=SALUSDT', { timeout: 5000 });
-        if (response.data && response.data.lastPrice) {
-            const price = parseFloat(response.data.lastPrice).toFixed(4);
-            const change = parseFloat(response.data.priceChangePercent).toFixed(2);
-            return res.json({ price, change, source: 'mexc' });
-        }
-        throw new Error('Invalid MEXC response');
-    } catch (err) {
-        console.warn('⚠️ [API] Price fetch failed, returning fallback:', err.message);
-        res.json({ price: "0.00", change: "0", source: 'fallback' });
-    }
-});
-
-app.get('/vault/api/price', async (req, res) => {
-    try {
-        const response = await axiosInstance.get('https://api.mexc.com/api/v3/ticker/24hr?symbol=SALUSDT', { timeout: 5000 });
-        if (response.data && response.data.lastPrice) {
-            const price = parseFloat(response.data.lastPrice).toFixed(4);
-            const change = parseFloat(response.data.priceChangePercent).toFixed(2);
-            return res.json({ price, change, source: 'mexc' });
-        }
-        throw new Error('Invalid MEXC response');
-    } catch (err) {
-        res.json({ price: "0.00", change: "0", source: 'fallback' });
-    }
-});
-
-// ============================================================================
 // YIELD INFO API - For Active Stakes Display
 // ============================================================================
 app.get('/vault/api/yield-info', async (req, res) => {

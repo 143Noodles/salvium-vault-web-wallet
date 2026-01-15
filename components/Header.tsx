@@ -21,12 +21,11 @@ export const Header: React.FC<HeaderProps> = ({ showNav = true }) => {
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        // Use relative path to avoid hardcoding production URL
-        // If running locally, Vite proxy or server.cjs should handle this
-        const response = await fetch('/api/price');
+        // Use Explorer API for consistent pricing
+        const response = await fetch('https://salvium.tools/api/price');
         const data = await response.json();
         if (data.price) {
-          setPrice(parseFloat(data.price).toFixed(4));
+          setPrice(parseFloat(data.price).toFixed(6));
         }
       } catch (e) {
         console.error('Failed to fetch price:', e);
@@ -34,8 +33,8 @@ export const Header: React.FC<HeaderProps> = ({ showNav = true }) => {
     };
 
     fetchPrice();
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchPrice, 60000);
+    // Refresh every 2 minutes (matches Explorer cache)
+    const interval = setInterval(fetchPrice, 120000);
     return () => clearInterval(interval);
   }, []);
 

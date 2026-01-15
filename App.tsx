@@ -85,8 +85,11 @@ const AppContent: React.FC = () => {
 
   // Storage persistence banner state
   const [showStorageBanner, setShowStorageBanner] = useState(false);
+  const [storageDenied, setStorageDenied] = useState(false);
+  const [pwaInstallDismissed, setPwaInstallDismissed] = useState(false);
   const deferredInstallPromptRef = useRef<any>(null);
   const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isFirefoxBrowser = /Firefox/i.test(navigator.userAgent);
   const isChromiumBrowser = useRef(
     !isSafariBrowser && (
       /Chrome/.test(navigator.userAgent) ||
@@ -211,6 +214,27 @@ const AppContent: React.FC = () => {
           return;
         }
 
+        // Check if permission was denied (Firefox)
+        if (navigator.permissions) {
+          try {
+            const permission = await navigator.permissions.query({ name: 'persistent-storage' as PermissionName });
+            if (permission.state === 'denied') {
+              setStorageDenied(true);
+            }
+            // Listen for permission changes
+            permission.onchange = () => {
+              if (permission.state === 'granted') {
+                setShowStorageBanner(false);
+                setStorageDenied(false);
+              } else if (permission.state === 'denied') {
+                setStorageDenied(true);
+              }
+            };
+          } catch (e) {
+            // Permission query not supported for persistent-storage
+          }
+        }
+
         // Try to request persistence (Chrome may auto-grant based on engagement)
         const granted = await navigator.storage.persist();
         if (!granted) {
@@ -233,8 +257,10 @@ const AppContent: React.FC = () => {
         const { outcome } = await deferredInstallPromptRef.current.userChoice;
         if (outcome === 'accepted') {
           setShowStorageBanner(false);
-          deferredInstallPromptRef.current = null;
+        } else {
+          setPwaInstallDismissed(true);
         }
+        deferredInstallPromptRef.current = null;
       } catch (e) {
         console.warn('[App] PWA install prompt failed:', e);
       }
@@ -511,17 +537,25 @@ const AppContent: React.FC = () => {
                   <span>
                     <strong>Storage not persistent.</strong>{' '}
                     {isChromiumBrowser.current
-                      ? 'Install this app to protect your wallet data from being cleared.'
-                      : 'Your wallet data may be lost if the browser clears storage.'}
+                      ? (pwaInstallDismissed
+                        ? 'Install this app from your browser menu to enable persistent storage.'
+                        : 'Install this app when prompted to enable persistent storage.')
+                      : isFirefoxBrowser
+                        ? (storageDenied
+                          ? 'Permission was blocked. Click the icon to the left of the URL to change site permissions.'
+                          : 'Enable persistent storage when prompted. You may access the setting to the left of the URL.')
+                        : 'Enable persistent storage in your browser settings to prevent data loss.'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={handleRequestPersistence}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium rounded-lg transition-colors"
-                  >
-                    {isChromiumBrowser.current && deferredInstallPromptRef.current ? 'Install App' : 'Enable'}
-                  </button>
+                  {!(isFirefoxBrowser && storageDenied) && !(isChromiumBrowser.current && pwaInstallDismissed) && (
+                    <button
+                      onClick={handleRequestPersistence}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium rounded-lg transition-colors"
+                    >
+                      {isChromiumBrowser.current && deferredInstallPromptRef.current ? 'Install App' : 'Enable'}
+                    </button>
+                  )}
                   <button
                     onClick={dismissStorageBanner}
                     className="p-1.5 text-amber-400 hover:text-amber-200 transition-colors"

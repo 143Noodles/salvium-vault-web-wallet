@@ -123,13 +123,13 @@
     // Fetch price data for the static header
     async function fetchPriceData() {
       try {
-        const response = await fetch('/vault/api/price');
+        const response = await fetch('https://salvium.tools/api/price');
         const data = await response.json();
         if (data.price) {
           const price = parseFloat(data.price);
           const priceEl = document.getElementById('priceData');
           if (priceEl) {
-            priceEl.textContent = `$${price.toFixed(3)}`;
+            priceEl.textContent = `$${price.toFixed(6)}`;
             priceEl.className = 'price-badge';
           }
         }
@@ -141,7 +141,7 @@
     // Only fetch if header is visible (Desktop)
     if (!(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Tablet|Kindle|Silk|PlayBook/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) {
       fetchPriceData();
-      setInterval(fetchPriceData, 60000);
+      setInterval(fetchPriceData, 120000);
     }
   </script>
 </body>
