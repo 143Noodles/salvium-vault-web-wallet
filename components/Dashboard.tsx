@@ -10,6 +10,7 @@ import { useWallet, WalletStats } from '../services/WalletContext';
 import { Card, Button, Badge, TruncatedAddress } from './UIComponents';
 import BalanceChart from './BalanceChart';
 import TransactionList from './TransactionList';
+import TransactionOverlay from './TransactionOverlay';
 import { formatSAL } from '../utils/format';
 import {
    ArrowUpRight,
@@ -36,6 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
    const { t } = useTranslation();
    const [hideBalance, setHideBalance] = useState(false);
    const [copied, setCopied] = useState(false);
+   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
    const wallet = useWallet();
 
    // Use real wallet address
@@ -331,15 +333,20 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                      <h3 className="text-base font-bold text-white flex items-center gap-2">
                         {t('dashboard.recentActivity')}
                      </h3>
-                     <Button variant="ghost" size="sm" className="text-xs h-8 hover:bg-white/5 text-text-secondary" onClick={() => onNavigate(TabView.HISTORY)}>{t('dashboard.viewAll')}</Button>
+                     <Button variant="ghost" size="sm" className="text-xs h-8 hover:bg-white/5 text-transparent bg-clip-text bg-gradient-to-r from-accent-primary to-accent-secondary" onClick={() => onNavigate(TabView.HISTORY)}>{t('dashboard.viewAll')}</Button>
                   </div>
                   <div className="flex-1 overflow-auto custom-scrollbar">
-                     <TransactionList compact={true} />
+                     <TransactionList compact={true} onTxClick={(txId) => setSelectedTxId(txId)} />
                   </div>
                </Card>
             </div>
          )}
 
+         <TransactionOverlay
+            isOpen={!!selectedTxId}
+            txId={selectedTxId}
+            onClose={() => setSelectedTxId(null)}
+         />
       </div>
    );
 };

@@ -224,6 +224,7 @@ interface WalletContextType {
     startScan: (fromHeight?: number) => Promise<void>;
     sendTransaction: (address: string, amount: number, paymentId?: string, sweepAll?: boolean) => Promise<string>;
     stakeTransaction: (amount: number, sweepAll?: boolean) => Promise<string>;
+    returnTransaction: (txid: string) => Promise<string>;
     createSubaddress: (label: string) => string;
     addContact: (name: string, address: string) => void;
     updateContact: (contact: Contact) => void;
@@ -2141,6 +2142,33 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         return txHash;
     };
 
+    // Return transaction - sends funds back to original sender
+    const returnTransaction = async (txid: string): Promise<string> => {
+        const txHash = await walletService.returnTransaction(txid);
+
+        // Add to pending transactions for immediate UI feedback
+        const pendingTx: WalletTransaction = {
+            txid: txHash,
+            type: 'out',
+            amount: 0, // Amount will be determined by the original transaction
+            fee: 0, // Fee will be updated when confirmed
+            timestamp: Date.now(),
+            height: 0, // Not yet in a block
+            confirmations: 0,
+            address: '', // Return goes back to sender
+            payment_id: '',
+            asset_type: 'SAL1',
+            tx_type: 7, // RETURN tx type
+            tx_type_label: 'Return',
+            pending: true // Mark as pending
+        };
+
+        setPendingTransactions(prev => [pendingTx, ...prev]);
+
+        refreshData();
+        return txHash;
+    };
+
     // Create subaddress
     const createSubaddress = (label: string): string => {
         const addr = walletService.createSubaddress(label);
@@ -2718,6 +2746,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         startScan,
         sendTransaction,
         stakeTransaction,
+        returnTransaction,
         createSubaddress,
         addContact,
         updateContact,

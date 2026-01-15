@@ -20,7 +20,8 @@
     "update": "업데이트",
     "verify": "확인",
     "max": "최대",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "처리 중..."
   },
   "navigation": {
     "home": "홈",
@@ -353,7 +354,8 @@
     "sent": "보냄",
     "pending": "대기 중",
     "confirmed": "확인됨",
-    "confirmations": "{{count}}개 확인",
+    "confirmations": "확인",
+    "confirmationsCount": "{{count}}개 확인",
     "noTransactions": "트랜잭션이 없습니다",
     "viewOnExplorer": "탐색기에서 보기",
     "block": "블록",
@@ -375,7 +377,15 @@
     },
     "details": "트랜잭션 상세",
     "hash": "트랜잭션 해시",
-    "poweredBy": "salvium.tools 탐색기 제공"
+    "poweredBy": "salvium.tools 탐색기 제공",
+    "viewInExplorer": "탐색기에서 보기",
+    "viewFullDetails": "탐색기에서 전체 세부 정보 보기",
+    "openInExplorer": "탐색기에서 열기",
+    "unconfirmed": "미확인",
+    "fee": "수수료",
+    "returnTransaction": "트랜잭션 반환",
+    "confirmReturn": "반환 확인",
+    "confirmReturnDescription": "이 트랜잭션을 반환하시겠습니까? 자금이 원래 발신자에게 다시 전송됩니다."
   },
   "errors": {
     "failedToInitialize": "초기화 실패",

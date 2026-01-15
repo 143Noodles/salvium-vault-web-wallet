@@ -20,7 +20,8 @@
     "update": "Update",
     "verify": "Verify",
     "max": "Max",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "Processing..."
   },
   "navigation": {
     "home": "Home",
@@ -353,7 +354,8 @@
     "sent": "Sent",
     "pending": "Pending",
     "confirmed": "Confirmed",
-    "confirmations": "{{count}} confirmations",
+    "confirmations": "Confirmations",
+    "confirmationsCount": "{{count}} confirmations",
     "noTransactions": "No transactions yet",
     "viewOnExplorer": "View on Explorer",
     "block": "Block",
@@ -375,7 +377,15 @@
     },
     "details": "Transaction Details",
     "hash": "Transaction Hash",
-    "poweredBy": "Powered by salvium.tools explorer"
+    "poweredBy": "Powered by salvium.tools explorer",
+    "viewInExplorer": "View in Explorer",
+    "viewFullDetails": "View full details on explorer",
+    "openInExplorer": "Open in Explorer",
+    "unconfirmed": "Unconfirmed",
+    "fee": "Fee",
+    "returnTransaction": "Return Transaction",
+    "confirmReturn": "Confirm Return",
+    "confirmReturnDescription": "Are you sure you want to return this transaction? This will send the funds back to the original sender."
   },
   "errors": {
     "failedToInitialize": "Failed to Initialize",

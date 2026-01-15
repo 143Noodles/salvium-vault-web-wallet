@@ -20,7 +20,8 @@
     "update": "Bijwerken",
     "verify": "Verifiëren",
     "max": "Max",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "Verwerken..."
   },
   "navigation": {
     "home": "Home",
@@ -353,7 +354,8 @@
     "sent": "Verzonden",
     "pending": "In Behandeling",
     "confirmed": "Bevestigd",
-    "confirmations": "{{count}} bevestigingen",
+    "confirmations": "Bevestigingen",
+    "confirmationsCount": "{{count}} bevestigingen",
     "noTransactions": "Nog geen transacties",
     "viewOnExplorer": "Bekijken in Explorer",
     "block": "Blok",
@@ -375,7 +377,15 @@
     },
     "details": "Transactiedetails",
     "hash": "Transactie Hash",
-    "poweredBy": "Aangedreven door salvium.tools explorer"
+    "poweredBy": "Aangedreven door salvium.tools explorer",
+    "viewInExplorer": "Bekijk in explorer",
+    "viewFullDetails": "Bekijk volledige details in explorer",
+    "openInExplorer": "Openen in explorer",
+    "unconfirmed": "Onbevestigd",
+    "fee": "Kosten",
+    "returnTransaction": "Transactie terugsturen",
+    "confirmReturn": "Bevestig terugsturen",
+    "confirmReturnDescription": "Weet u zeker dat u deze transactie wilt terugsturen? Dit stuurt de fondsen terug naar de oorspronkelijke afzender."
   },
   "errors": {
     "failedToInitialize": "Initialisatie Mislukt",

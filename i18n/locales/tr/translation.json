@@ -20,7 +20,8 @@
     "update": "Güncelle",
     "verify": "Doğrula",
     "max": "Maks",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "İşleniyor..."
   },
   "navigation": {
     "home": "Ana Sayfa",
@@ -353,7 +354,8 @@
     "sent": "Gönderilen",
     "pending": "Beklemede",
     "confirmed": "Onaylandı",
-    "confirmations": "{{count}} onay",
+    "confirmations": "Onaylar",
+    "confirmationsCount": "{{count}} onay",
     "noTransactions": "Henüz işlem yok",
     "viewOnExplorer": "Explorer'da Görüntüle",
     "block": "Blok",
@@ -375,7 +377,15 @@
     },
     "details": "İşlem Detayları",
     "hash": "İşlem Hash'i",
-    "poweredBy": "salvium.tools explorer tarafından desteklenmektedir"
+    "poweredBy": "salvium.tools explorer tarafından desteklenmektedir",
+    "viewInExplorer": "Explorer'da görüntüle",
+    "viewFullDetails": "Explorer'da tam detayları görüntüle",
+    "openInExplorer": "Explorer'da aç",
+    "unconfirmed": "Onaylanmadı",
+    "fee": "Ücret",
+    "returnTransaction": "İşlemi İade Et",
+    "confirmReturn": "İadeyi Onayla",
+    "confirmReturnDescription": "Bu işlemi iade etmek istediğinizden emin misiniz? Bu, fonları orijinal gönderene geri gönderecektir."
   },
   "errors": {
     "failedToInitialize": "Başlatma Başarısız",

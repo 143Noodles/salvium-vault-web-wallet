@@ -20,7 +20,8 @@
     "update": "Aktualizuj",
     "verify": "Zweryfikuj",
     "max": "Maks",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "Przetwarzanie..."
   },
   "navigation": {
     "home": "Start",
@@ -353,7 +354,8 @@
     "sent": "Wysłane",
     "pending": "Oczekujące",
     "confirmed": "Potwierdzone",
-    "confirmations": "{{count}} potwierdzeń",
+    "confirmations": "Potwierdzenia",
+    "confirmationsCount": "{{count}} potwierdzeń",
     "noTransactions": "Brak transakcji",
     "viewOnExplorer": "Zobacz w Eksploratorze",
     "block": "Blok",
@@ -375,7 +377,15 @@
     },
     "details": "Szczegóły Transakcji",
     "hash": "Hash Transakcji",
-    "poweredBy": "Obsługiwane przez eksplorator salvium.tools"
+    "poweredBy": "Obsługiwane przez eksplorator salvium.tools",
+    "viewInExplorer": "Zobacz w eksploratorze",
+    "viewFullDetails": "Zobacz pełne szczegóły w eksploratorze",
+    "openInExplorer": "Otwórz w eksploratorze",
+    "unconfirmed": "Niepotwierdzone",
+    "fee": "Opłata",
+    "returnTransaction": "Zwróć transakcję",
+    "confirmReturn": "Potwierdź zwrot",
+    "confirmReturnDescription": "Czy na pewno chcesz zwrócić tę transakcję? Spowoduje to wysłanie środków z powrotem do pierwotnego nadawcy."
   },
   "errors": {
     "failedToInitialize": "Inicjalizacja Nie Powiodła Się",

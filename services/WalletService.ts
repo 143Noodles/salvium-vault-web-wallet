@@ -144,6 +144,8 @@ interface WasmWalletInstance {
   create_transaction_json(address: string, amount_str: string, mixin: number, priority: number): string;
   // WASM signature: create_stake_transaction_json(amount_str, mixin, priority)
   create_stake_transaction_json(amount_str: string, mixin: number, priority: number): string;
+  // WASM signature: create_return_transaction_json(txid)
+  create_return_transaction_json(txid: string): string;
   // WASM signature: estimate_fee_json(amount_str, mixin, priority)
   estimate_fee_json(amount_str: string, mixin: number, priority: number): string;
   // Split transaction architecture
@@ -1216,6 +1218,151 @@ export class WalletService {
 
     } catch (e) {
       console.error('[WalletService] Failed to stake:', e);
+      throw e;
+    }
+  }
+
+  /**
+   * Return funds to the original sender of a transaction
+   * Creates a RETURN transaction that sends the funds back to whoever sent them
+   * @param txid The transaction hash of the incoming transaction to return
+   * @returns Transaction hash of the return transaction
+   */
+  async returnTransaction(txid: string): Promise<string> {
+    if (!this.walletInstance || !this.walletInstance.is_initialized()) {
+      throw new Error('Wallet not initialized');
+    }
+
+    const MIXIN = 15; // Ring size 16 - 1
+    const INPUTS_ESTIMATE = 60; // Estimate max inputs to ensure enough decoys
+
+    try {
+      console.log('[WalletService] Creating return transaction for txid:', txid);
+
+      // Check if create_return_transaction_json exists
+      if (!this.walletInstance.create_return_transaction_json) {
+        throw new Error('WASM create_return_transaction_json not available - please update WASM');
+      }
+
+      // Step 0: Inject RPC data (fee estimate, output distribution, etc.)
+      await this.injectJsonRpcResponses();
+
+      // Step 1: Pre-fetch and inject forced decoys (Server-side selection)
+      const response = await fetch('/vault/api/wallet/get_random_outs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: MIXIN,
+          amounts: Array(INPUTS_ESTIMATE).fill(0)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch random outputs: ${response.status} ${response.statusText}`);
+      }
+
+      const outsData = await response.json();
+      if (outsData.status !== 'OK') {
+        throw new Error(`Server error fetching outputs: ${outsData.error || 'Unknown error'}`);
+      }
+
+      if (this.wasmModule?.inject_decoy_outputs_from_json) {
+        outsData.asset_type = 'SAL1';
+        this.wasmModule.inject_decoy_outputs_from_json(JSON.stringify(outsData));
+      }
+
+      // Step 2: Create return transaction with retry loop for decoy cache misses
+      const MAX_FETCH_ROUNDS = 15;
+      let result: any = null;
+      let lastError: string = '';
+      let fetchRound = 0;
+
+      // Save RNG state BEFORE first TX attempt for deterministic retries
+      let savedRngState: string | null = null;
+      if (this.wasmModule?.get_random_state) {
+        savedRngState = this.wasmModule.get_random_state();
+      }
+
+      while (fetchRound < MAX_FETCH_ROUNDS) {
+        fetchRound++;
+
+        // On retry, restore RNG state so wallet picks SAME decoys
+        if (fetchRound > 1 && savedRngState && this.wasmModule?.set_random_state) {
+          this.wasmModule.set_random_state(savedRngState);
+        }
+
+        try {
+          const resultJson = this.walletInstance.create_return_transaction_json(txid);
+          console.log('[WalletService] Return transaction result (round ' + fetchRound + '):', resultJson);
+          result = JSON.parse(resultJson);
+
+          if (result.status === 'error') {
+            lastError = result.error || 'Unknown error';
+
+            // Check for cache miss - need to fetch real outputs
+            if (this.wasmModule?.has_pending_get_outs_request?.()) {
+              const pendingRequest = this.wasmModule.get_pending_get_outs_request?.();
+              if (pendingRequest) {
+                console.log('[WalletService] Return TX cache miss - fetching requested decoys...');
+                await this.fetchAndInjectExactOutputs(pendingRequest);
+                continue;
+              }
+            }
+
+            // Not a cache miss - real error
+            throw new Error(lastError);
+          }
+
+          // Success!
+          break;
+
+        } catch (innerError) {
+          if (fetchRound >= MAX_FETCH_ROUNDS) {
+            throw innerError;
+          }
+          // Check if we should retry
+          if (!this.wasmModule?.has_pending_get_outs_request?.()) {
+            throw innerError;
+          }
+        }
+      }
+
+      if (!result || result.status === 'error') {
+        throw new Error(lastError || 'Failed to create return transaction');
+      }
+
+      if (!result.transactions || result.transactions.length === 0) {
+        throw new Error('No return transaction created');
+      }
+
+      const txBlob = result.transactions[0].tx_blob;
+      const returnTxHash = result.transactions[0].tx_hash;
+
+      // Step 3: Broadcast the return transaction
+      const broadcastResponse = await fetch('/vault/api/wallet/sendrawtransaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tx_as_hex: txBlob })
+      });
+
+      if (!broadcastResponse.ok) {
+        const errorText = await broadcastResponse.text();
+        console.error('[WalletService] Return broadcast HTTP error:', broadcastResponse.status, errorText);
+        throw new Error(`Broadcast failed: HTTP ${broadcastResponse.status}`);
+      }
+
+      const broadcastResult = await broadcastResponse.json();
+
+      if (broadcastResult.status !== 'OK') {
+        console.error('[WalletService] Return broadcast REJECTED:', broadcastResult);
+        throw new Error(broadcastResult.reason || broadcastResult.error || 'Return broadcast rejected by network');
+      }
+
+      console.log('[WalletService] Return transaction broadcast successful:', returnTxHash);
+      return returnTxHash;
+
+    } catch (e) {
+      console.error('[WalletService] Failed to create return transaction:', e);
       throw e;
     }
   }

@@ -20,7 +20,8 @@
     "update": "تحديث",
     "verify": "تحقق",
     "max": "الحد الأقصى",
-    "sal": "SAL"
+    "sal": "SAL",
+    "processing": "جار المعالجة..."
   },
   "navigation": {
     "home": "الرئيسية",
@@ -353,7 +354,8 @@
     "sent": "مرسل",
     "pending": "معلق",
     "confirmed": "مؤكد",
-    "confirmations": "{{count}} تأكيدات",
+    "confirmations": "التأكيدات",
+    "confirmationsCount": "{{count}} تأكيدات",
     "noTransactions": "لا توجد معاملات بعد",
     "viewOnExplorer": "عرض في المستكشف",
     "block": "كتلة",
@@ -375,7 +377,15 @@
     },
     "details": "تفاصيل المعاملة",
     "hash": "هاش المعاملة",
-    "poweredBy": "مدعوم من مستكشف salvium.tools"
+    "poweredBy": "مدعوم من مستكشف salvium.tools",
+    "viewInExplorer": "عرض في المستكشف",
+    "viewFullDetails": "عرض التفاصيل الكاملة في المستكشف",
+    "openInExplorer": "فتح في المستكشف",
+    "unconfirmed": "غير مؤكد",
+    "fee": "الرسوم",
+    "returnTransaction": "إرجاع المعاملة",
+    "confirmReturn": "تأكيد الإرجاع",
+    "confirmReturnDescription": "هل أنت متأكد أنك تريد إرجاع هذه المعاملة؟ سيتم إرسال الأموال إلى المرسل الأصلي."
   },
   "errors": {
     "failedToInitialize": "فشل التهيئة",
