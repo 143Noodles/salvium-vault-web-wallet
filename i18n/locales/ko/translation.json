@@ -373,6 +373,8 @@
       "yield": "수익",
       "stake": "스테이크",
       "transfer": "전송",
+      "transferIn": "입금",
+      "transferOut": "출금",
       "audit": "감사"
     },
     "details": "트랜잭션 상세",

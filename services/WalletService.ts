@@ -1223,6 +1223,173 @@ export class WalletService {
   }
 
   /**
+   * Sweep all unlocked funds to a destination address
+   * Uses the native wallet2::create_transactions_all() for proper sweep
+   * @param address Destination address to sweep funds to
+   * @param priority Transaction priority (0-3)
+   * @returns Transaction hash(es) of the sweep transaction(s)
+   */
+  async sweepAllTransaction(
+    address: string,
+    priority: number = 1
+  ): Promise<string[]> {
+    if (!this.walletInstance || !this.walletInstance.is_initialized()) {
+      throw new Error('Wallet not initialized');
+    }
+
+    const MIXIN = 15; // Ring size 16 - 1
+    const INPUTS_ESTIMATE = 100; // Sweep may use many inputs
+
+    try {
+      console.log('[WalletService] Creating sweep_all transaction to:', address);
+
+      // Check if create_sweep_all_transaction_json exists
+      if (!this.walletInstance.create_sweep_all_transaction_json) {
+        throw new Error('WASM create_sweep_all_transaction_json not available - please update WASM');
+      }
+
+      // Step 0: Inject RPC data (fee estimate, output distribution, etc.)
+      await this.injectJsonRpcResponses();
+
+      // Step 1: Pre-fetch and inject forced decoys (Server-side selection)
+      const response = await fetch('/vault/api/wallet/get_random_outs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: MIXIN,
+          amounts: Array(INPUTS_ESTIMATE).fill(0)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch random outputs: ${response.status} ${response.statusText}`);
+      }
+
+      const outsData = await response.json();
+      if (outsData.status !== 'OK') {
+        throw new Error(`Server error fetching outputs: ${outsData.error || 'Unknown error'}`);
+      }
+
+      if (this.wasmModule?.inject_decoy_outputs_from_json) {
+        outsData.asset_type = 'SAL1';
+        this.wasmModule.inject_decoy_outputs_from_json(JSON.stringify(outsData));
+      }
+
+      // Step 2: Create sweep_all transaction with retry loop for decoy cache misses
+      const MAX_FETCH_ROUNDS = 15;
+      let result: any = null;
+      let lastError: string = '';
+      let fetchRound = 0;
+
+      // Save RNG state BEFORE first TX attempt for deterministic retries
+      let savedRngState: string | null = null;
+      if (this.wasmModule?.get_random_state) {
+        savedRngState = this.wasmModule.get_random_state();
+      }
+
+      while (fetchRound < MAX_FETCH_ROUNDS) {
+        fetchRound++;
+
+        // On retry, restore RNG state so wallet picks SAME decoys
+        if (fetchRound > 1 && savedRngState && this.wasmModule?.set_random_state) {
+          this.wasmModule.set_random_state(savedRngState);
+        }
+
+        try {
+          const resultJson = this.walletInstance.create_sweep_all_transaction_json(
+            address,
+            MIXIN,
+            priority
+          );
+          result = JSON.parse(resultJson);
+
+          if (result.status === 'error') {
+            lastError = result.error || 'Unknown error';
+
+            // Check for cache miss - need to fetch real outputs
+            if (this.wasmModule?.has_pending_get_outs_request?.()) {
+              const requestBase64 = this.wasmModule.get_pending_get_outs_request?.() || '';
+              if (requestBase64) {
+                console.log(`[WalletService] Sweep_all cache miss round ${fetchRound}, fetching exact outputs...`);
+                await this.fetchAndInjectExactOutputs(requestBase64);
+                this.wasmModule?.clear_pending_get_outs_request?.();
+                continue;
+              }
+            }
+
+            // No pending request - this is a different error
+            throw new Error(lastError);
+          }
+
+          // Success!
+          break;
+
+        } catch (innerError: any) {
+          lastError = innerError.message || String(innerError);
+
+          // Check if there's a pending decoy request
+          if (this.wasmModule?.has_pending_get_outs_request?.()) {
+            const requestBase64 = this.wasmModule.get_pending_get_outs_request?.() || '';
+            if (requestBase64) {
+              console.log(`[WalletService] Sweep_all exception cache miss round ${fetchRound}, fetching...`);
+              await this.fetchAndInjectExactOutputs(requestBase64);
+              this.wasmModule?.clear_pending_get_outs_request?.();
+              continue;
+            }
+          }
+
+          throw innerError;
+        }
+      }
+
+      if (!result || result.status !== 'success') {
+        throw new Error(lastError || 'Sweep_all failed after max retries');
+      }
+
+      console.log('[WalletService] Sweep_all result:', {
+        txCount: result.transactions?.length,
+        totalAmount: result.total_amount,
+        totalFee: result.total_fee
+      });
+
+      // Step 3: Broadcast all transactions
+      const txHashes: string[] = [];
+      for (const tx of result.transactions) {
+        const txBlob = tx.tx_blob;
+        const txHash = tx.tx_hash;
+
+        console.log('[WalletService] Broadcasting sweep tx:', txHash.substring(0, 16) + '...');
+
+        const broadcastResponse = await fetch('/vault/api/wallet/sendrawtransaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tx_as_hex: txBlob })
+        });
+
+        if (!broadcastResponse.ok) {
+          throw new Error(`Sweep broadcast failed: HTTP ${broadcastResponse.status}`);
+        }
+
+        const broadcastResult = await broadcastResponse.json();
+
+        if (broadcastResult.status !== 'OK') {
+          console.error('[WalletService] Sweep broadcast REJECTED:', broadcastResult);
+          throw new Error(broadcastResult.reason || broadcastResult.error || 'Sweep broadcast rejected by network');
+        }
+
+        txHashes.push(txHash);
+      }
+
+      console.log('[WalletService] Sweep_all complete, txHashes:', txHashes);
+      return txHashes;
+
+    } catch (e) {
+      console.error('[WalletService] Failed to sweep_all:', e);
+      throw e;
+    }
+  }
+
+  /**
    * Return funds to the original sender of a transaction
    * Creates a RETURN transaction that sends the funds back to whoever sent them
    * @param txid The transaction hash of the incoming transaction to return

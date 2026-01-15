@@ -373,6 +373,8 @@
       "yield": "Getiri",
       "stake": "Stake",
       "transfer": "Transfer",
+      "transferIn": "Gelen",
+      "transferOut": "Giden",
       "audit": "Denetim"
     },
     "details": "İşlem Detayları",

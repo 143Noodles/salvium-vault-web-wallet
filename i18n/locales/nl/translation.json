@@ -373,6 +373,8 @@
       "yield": "Opbrengst",
       "stake": "Stake",
       "transfer": "Overdracht",
+      "transferIn": "Inkomend",
+      "transferOut": "Uitgaand",
       "audit": "Audit"
     },
     "details": "Transactiedetails",

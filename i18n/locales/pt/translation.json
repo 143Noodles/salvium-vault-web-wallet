@@ -373,6 +373,8 @@
       "yield": "Rendimento",
       "stake": "Stake",
       "transfer": "Transferência",
+      "transferIn": "Entrada",
+      "transferOut": "Saída",
       "audit": "Auditoria"
     },
     "details": "Detalhes da Transação",

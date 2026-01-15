@@ -373,6 +373,8 @@
       "yield": "عائد",
       "stake": "تخزين",
       "transfer": "تحويل",
+      "transferIn": "وارد",
+      "transferOut": "صادر",
       "audit": "تدقيق"
     },
     "details": "تفاصيل المعاملة",

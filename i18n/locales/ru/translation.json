@@ -373,6 +373,8 @@
       "yield": "Доход",
       "stake": "Стейк",
       "transfer": "Перевод",
+      "transferIn": "Входящий",
+      "transferOut": "Исходящий",
       "audit": "Аудит"
     },
     "details": "Детали Транзакции",

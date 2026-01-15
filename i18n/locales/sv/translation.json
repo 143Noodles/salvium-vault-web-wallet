@@ -373,6 +373,8 @@
       "yield": "Avkastning",
       "stake": "Stake",
       "transfer": "Överföring",
+      "transferIn": "Inkommande",
+      "transferOut": "Utgående",
       "audit": "Granskning"
     },
     "details": "Transaktionsdetaljer",

@@ -373,6 +373,8 @@
       "yield": "Ertrag",
       "stake": "Stake",
       "transfer": "Überweisung",
+      "transferIn": "Eingang",
+      "transferOut": "Ausgang",
       "audit": "Audit"
     },
     "details": "Transaktionsdetails",

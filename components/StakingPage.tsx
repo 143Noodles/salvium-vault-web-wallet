@@ -156,36 +156,47 @@ const StakingPage: React.FC = () => {
 
    // Validate stake amount and detect when sweepAll is needed for fee handling
    useEffect(() => {
-      if (!isValidStakeAmount(stakeAmount)) {
-         setValidationState(null);
-         return;
-      }
+      const validate = async () => {
+         if (!isValidStakeAmount(stakeAmount)) {
+            setValidationState(null);
+            return;
+         }
 
-      const amount = parseFloat(stakeAmount);
-      const available = wallet.balance.unlockedBalanceSAL || 0;
+         const amount = parseFloat(stakeAmount);
+         const available = wallet.balance.unlockedBalanceSAL || 0;
 
-      // Check if amount exceeds balance
-      if (amount > available) {
-         setValidationState({
-            type: 'error',
-            message: t('staking.errors.exceedsBalance')
-         });
-         return;
-      }
+         // Check if amount exceeds balance
+         if (amount > available) {
+            setValidationState({
+               type: 'error',
+               message: t('staking.errors.exceedsBalance')
+            });
+            return;
+         }
 
-      // Estimate fee buffer - stake transactions typically need ~0.001-0.01 SAL for fees
-      // If amount is within 2% of balance or leaves less than 0.01 SAL, use sweepAll
-      const feeBuffer = Math.max(0.01, available * 0.02);
-      const remainingAfterStake = available - amount;
+         // Estimate actual fee for stake transaction
+         let fee = 0.0001; // Fallback
+         try {
+            fee = await wallet.estimateFee(wallet.address, amount);
+         } catch (e) {
+            // Keep default fallback
+         }
 
-      if (remainingAfterStake < feeBuffer) {
-         setValidationState({
-            type: 'warning',
-            message: 'Amount will be adjusted to cover transaction fee'
-         });
-      } else {
-         setValidationState(null);
-      }
+         const totalNeeded = amount + fee;
+
+         // Only show warning when amount + fee exceeds available balance
+         if (totalNeeded > available) {
+            setValidationState({
+               type: 'warning',
+               message: t('send.errors.adjustedForFee')
+            });
+         } else {
+            setValidationState(null);
+         }
+      };
+
+      const timer = setTimeout(validate, 500); // 500ms debounce
+      return () => clearTimeout(timer);
    }, [stakeAmount, wallet.balance.unlockedBalanceSAL]);
 
    // Get active and unlocked stakes from wallet - these update reactively

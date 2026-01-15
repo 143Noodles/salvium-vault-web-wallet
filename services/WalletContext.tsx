@@ -225,6 +225,7 @@ interface WalletContextType {
     sendTransaction: (address: string, amount: number, paymentId?: string, sweepAll?: boolean) => Promise<string>;
     stakeTransaction: (amount: number, sweepAll?: boolean) => Promise<string>;
     returnTransaction: (txid: string) => Promise<string>;
+    sweepAllTransaction: (address: string) => Promise<string[]>;
     createSubaddress: (label: string) => string;
     addContact: (name: string, address: string) => void;
     updateContact: (contact: Contact) => void;
@@ -2169,6 +2170,34 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         return txHash;
     };
 
+    // Sweep all - sends ALL unlocked funds to a destination
+    const sweepAllTransaction = async (toAddress: string): Promise<string[]> => {
+        const txHashes = await walletService.sweepAllTransaction(toAddress);
+
+        // Add pending transactions for each sweep tx
+        for (const txHash of txHashes) {
+            const pendingTx: WalletTransaction = {
+                txid: txHash,
+                type: 'out',
+                amount: 0, // Will be updated when confirmed
+                fee: 0,
+                timestamp: Date.now(),
+                height: 0,
+                confirmations: 0,
+                address: toAddress,
+                payment_id: '',
+                asset_type: 'SAL1',
+                tx_type: 0, // TRANSFER
+                tx_type_label: 'Sweep',
+                pending: true
+            };
+            setPendingTransactions(prev => [pendingTx, ...prev]);
+        }
+
+        refreshData();
+        return txHashes;
+    };
+
     // Create subaddress
     const createSubaddress = (label: string): string => {
         const addr = walletService.createSubaddress(label);
@@ -2747,6 +2776,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         sendTransaction,
         stakeTransaction,
         returnTransaction,
+        sweepAllTransaction,
         createSubaddress,
         addContact,
         updateContact,

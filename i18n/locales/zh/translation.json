@@ -373,6 +373,8 @@
       "yield": "收益",
       "stake": "质押",
       "transfer": "转账",
+      "transferIn": "转入",
+      "transferOut": "转出",
       "audit": "审计"
     },
     "details": "交易详情",

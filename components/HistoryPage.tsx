@@ -75,13 +75,14 @@ const HistoryPage: React.FC = () => {
    // Check if a filter is active
    const isFilterActive = (type: string) => filterTypes.has(type);
 
-   // Available filters
+   // Available filters - matches tx_type_label values from TransactionList
    const filterOptions = [
-      { id: 'in', label: t('history.filterOptions.received'), color: 'text-accent-success' },
-      { id: 'out', label: t('history.filterOptions.sent'), color: 'text-red-500' },
-      { id: 'pending', label: t('history.filterOptions.pending'), color: 'text-accent-warning' },
-      { id: 'mining', label: t('history.filterOptions.mining'), color: 'text-yellow-400' },
-      { id: 'stake', label: t('history.filterOptions.stake'), color: 'text-blue-400' },
+      { id: 'transfer_in', label: t('transactions.types.transferIn'), color: 'text-accent-success' },
+      { id: 'transfer_out', label: t('transactions.types.transferOut'), color: 'text-red-500' },
+      { id: 'mining', label: t('transactions.types.mining'), color: 'text-yellow-400' },
+      { id: 'yield', label: t('transactions.types.yield'), color: 'text-green-400' },
+      { id: 'stake', label: t('transactions.types.stake'), color: 'text-blue-400' },
+      { id: 'audit', label: t('transactions.types.audit'), color: 'text-purple-400' },
    ];
 
    // Derived filtered transactions
@@ -97,28 +98,20 @@ const HistoryPage: React.FC = () => {
          );
       }
 
-      // 2. Type Filter
+      // 2. Type Filter - matches on tx_type_label and direction
       if (filterTypes.size > 0) {
          txs = txs.filter(tx => {
-            // Check based on tx_type_label first (mining, stake, etc.)
-            if (tx.tx_type_label) {
-               const label = tx.tx_type_label.toLowerCase();
-               if (filterTypes.has('mining') && label === 'mining') return true;
-               if (filterTypes.has('stake') && label === 'stake') return true;
-            }
+            const label = (tx.tx_type_label || 'transfer').toLowerCase();
 
-            // Fallback to basic types if specific label filter isn't active or fails
-            // But if we have specific filters like 'mining' active, we shouldn't match them just because they are 'in'
-            // unless 'in' is ALSO selected.
-            // Simplified logic: Check if the tx matches ANY active filter category
-
-            if (filterTypes.has('in') && tx.type === 'in' && tx.tx_type_label !== 'mining') return true;
-            if (filterTypes.has('out') && tx.type === 'out') return true;
-            if (filterTypes.has('pending') && tx.type === 'pending') return true;
-
-            // Special handling: if filter has 'mining' and tx is mining
-            if (filterTypes.has('mining') && (tx.tx_type_label?.toLowerCase() === 'mining' || tx.tx_type_label?.toLowerCase() === 'yield')) return true;
-            if (filterTypes.has('stake') && (tx.tx_type_label?.toLowerCase() === 'stake')) return true;
+            // Transfer In: incoming transfers (not mining/yield/stake which have their own labels)
+            if (filterTypes.has('transfer_in') && tx.type === 'in' && label === 'transfer') return true;
+            // Transfer Out: outgoing transfers (not stake/audit which have their own labels)
+            if (filterTypes.has('transfer_out') && tx.type === 'out' && label === 'transfer') return true;
+            // Specific type labels
+            if (filterTypes.has('mining') && label === 'mining') return true;
+            if (filterTypes.has('yield') && label === 'yield') return true;
+            if (filterTypes.has('stake') && label === 'stake') return true;
+            if (filterTypes.has('audit') && label === 'audit') return true;
 
             return false;
          });
