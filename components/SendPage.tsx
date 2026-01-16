@@ -63,6 +63,32 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
   const [sweepTxCount, setSweepTxCount] = useState(0);
   const [showSweepExternalWarning, setShowSweepExternalWarning] = useState(false);
   const [sweepConfirmed, setSweepConfirmed] = useState(false);
+  const [isAddressValid, setIsAddressValid] = useState(false);
+
+  // Validate amount: must be a positive number
+  const isValidAmount = (value: string): boolean => {
+    if (!value || value.trim() === '') return false;
+    // Reject scientific notation and negative signs
+    if (/[eE\-]/.test(value)) return false;
+    // Must be a valid positive decimal number
+    if (!/^\d+\.?\d*$/.test(value)) return false;
+    const num = parseFloat(value);
+    return !isNaN(num) && num > 0;
+  };
+
+  // Validate address using wallet's validation function
+  useEffect(() => {
+    const checkAddress = async () => {
+      if (!address || address.trim() === '') {
+        setIsAddressValid(false);
+        return;
+      }
+      const valid = await wallet.validateAddress(address.trim());
+      setIsAddressValid(valid);
+    };
+    const timer = setTimeout(checkAddress, 300); // Debounce
+    return () => clearTimeout(timer);
+  }, [address, wallet]);
 
   // Handle Initial Params (e.g. from Donate button)
   useEffect(() => {
@@ -498,7 +524,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               <div className="pt-4 space-y-3">
                 <Button
                   onClick={handleSend}
-                  disabled={isSending}
+                  disabled={!isAddressValid || !isValidAmount(amount) || validationState?.type === 'error' || isSending}
                   className="w-full py-4 text-lg font-bold shadow-xl shadow-accent-primary/10 hover:shadow-accent-primary/20"
                 >
                   {isSending ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : <Send className="mr-2 w-5 h-5" />}
