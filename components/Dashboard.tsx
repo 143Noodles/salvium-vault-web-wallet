@@ -25,20 +25,30 @@ import {
    Unlock,
    Wallet,
    Eye,
-   EyeOff
+   EyeOff,
+   Send,
+   Download
 } from './Icons';
 
 interface DashboardProps {
    stats: WalletStats;
    onNavigate: (tab: TabView) => void;
+   resetKey?: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, resetKey }) => {
    const { t } = useTranslation();
    const [hideBalance, setHideBalance] = useState(false);
    const [copied, setCopied] = useState(false);
    const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
    const wallet = useWallet();
+
+   // Close transaction overlay when resetKey changes (user clicked Dashboard while already on Dashboard)
+   useEffect(() => {
+      if (resetKey && resetKey > 0) {
+         setSelectedTxId(null);
+      }
+   }, [resetKey]);
 
    // Use real wallet address
    const walletAddress = wallet.address || '';
@@ -188,11 +198,11 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                         {/* Action Buttons */}
                         <div className="flex gap-3">
                            <Button className="flex-1 px-8 shadow-indigo-500/20 hover:shadow-indigo-500/40 py-2.5 h-auto" onClick={() => onNavigate(TabView.SEND)}>
-                              <ArrowUpRight size={18} className="mr-2" />
+                              <Send size={18} className="mr-2" />
                               {t('navigation.send')}
                            </Button>
                            <Button variant="secondary" className="flex-1 px-8 bg-white/5 hover:bg-white/10 border-white/10 py-2.5 h-auto" onClick={() => onNavigate(TabView.RECEIVE)}>
-                              <ArrowDownLeft size={18} className="mr-2" />
+                              <Download size={18} className="mr-2" />
                               {t('navigation.receive')}
                            </Button>
                         </div>

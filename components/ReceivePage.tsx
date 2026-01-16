@@ -167,7 +167,7 @@ const ReceivePage: React.FC = () => {
             <Card glow className="h-full flex flex-col items-center justify-center py-10 relative">
                {/* Mobile Only: Navigation Buttons at Top */}
                {isMobileOrTablet && (
-                  <div className="w-full px-4 lg:hidden mb-10">
+                  <div className="w-full px-4 lg:hidden mb-6">
                      <Button variant="secondary" className="w-full py-4" onClick={() => setIsSubaddressOpen(true)}>
                         <Layers className="mr-2 w-[1.125rem] h-[1.125rem]" />
                         {t('receive.manageSubaddresses')}
@@ -175,7 +175,12 @@ const ReceivePage: React.FC = () => {
                   </div>
                )}
 
-               <h2 className="text-2xl font-bold text-white mb-2">{t('receive.title')}</h2>
+               <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
+                     <Download className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">{t('receive.title')}</h2>
+               </div>
                <p className="text-text-muted text-sm mb-10">{t('receive.subtitle')}</p>
 
                <div className="relative group mb-10">

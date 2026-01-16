@@ -387,7 +387,10 @@
     "fee": "Fee",
     "returnTransaction": "Return Transaction",
     "confirmReturn": "Confirm Return",
-    "confirmReturnDescription": "Are you sure you want to return this transaction? This will send the funds back to the original sender."
+    "confirmReturnDescription": "Are you sure you want to return this transaction? This will send the funds back to the original sender.",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "blocksToUnlock": "blocks to unlock"
   },
   "errors": {
     "failedToInitialize": "Failed to Initialize",

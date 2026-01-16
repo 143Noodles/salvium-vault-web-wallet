@@ -5,8 +5,8 @@ import { isMobile, isBrowser, isTablet, isIPad13 } from 'react-device-detect';
 // Device detection helpers for responsive layouts
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
-import { Card, Button, Input, Overlay, Badge } from './UIComponents';
-import { Send, User, Clock, ArrowRight, Wallet, AlertCircle, CheckCircle2, UserPlus, Search, X, Edit2, Trash2, BookOpen, Camera } from './Icons';
+import { Card, Button, Input, Overlay, Badge, TruncatedAddress } from './UIComponents';
+import { Send, User, Clock, Wallet, AlertCircle, CheckCircle2, Check, UserPlus, Search, X, Edit2, Trash2, BookOpen, Camera, BrushCleaning, Loader2, AlertTriangle, ChevronDown } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { formatSAL } from '../utils/format';
 
@@ -27,6 +27,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentId, setPaymentId] = useState('');
+  const [showPaymentId, setShowPaymentId] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentSuccess, setSentSuccess] = useState(false);
@@ -39,6 +40,10 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannerTarget, setScannerTarget] = useState<'send' | 'contact'>('send');
 
+  // Address input focus state
+  const [isAddressFocused, setIsAddressFocused] = useState(false);
+  const addressInputRef = React.useRef<HTMLInputElement>(null);
+
   // Contact State
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
   const [isAddressBookOpen, setIsAddressBookOpen] = useState(false); // Mobile Overlay
@@ -46,6 +51,18 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
   const [contactName, setContactName] = useState('');
   const [contactAddress, setContactAddress] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Sweep All State
+  const [showSweepModal, setShowSweepModal] = useState(false);
+  const [sweepAddress, setSweepAddress] = useState('');
+  const [isSweepAddressFocused, setIsSweepAddressFocused] = useState(false);
+  const sweepAddressInputRef = React.useRef<HTMLInputElement>(null);
+  const [sweepError, setSweepError] = useState('');
+  const [isSweeping, setIsSweeping] = useState(false);
+  const [showSweepSuccess, setShowSweepSuccess] = useState(false);
+  const [sweepTxCount, setSweepTxCount] = useState(0);
+  const [showSweepExternalWarning, setShowSweepExternalWarning] = useState(false);
+  const [sweepConfirmed, setSweepConfirmed] = useState(false);
 
   // Handle Initial Params (e.g. from Donate button)
   useEffect(() => {
@@ -166,6 +183,52 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
     setSentSuccess(false);
     setTxHash('');
     setError(null);
+  };
+
+  // Sweep All
+  const closeSweepModal = () => {
+    setShowSweepModal(false);
+    setSweepAddress('');
+    setSweepError('');
+    setShowSweepExternalWarning(false);
+    setSweepConfirmed(false);
+  };
+
+  const handleSweepAll = async () => {
+    if (!sweepAddress) {
+      setSweepError('Please enter a destination address');
+      return;
+    }
+
+    // Check if sweeping to own wallet (primary address or any subaddress)
+    const isOwnAddress = sweepAddress === wallet.address ||
+      wallet.subaddresses.some(sub => sub.address === sweepAddress);
+
+    if (!isOwnAddress) {
+      setShowSweepExternalWarning(true);
+      return;
+    }
+
+    // Address matches own wallet, proceed directly
+    await executeSweepAll();
+  };
+
+  const executeSweepAll = async () => {
+    setIsSweeping(true);
+    setSweepError('');
+    setShowSweepExternalWarning(false);
+
+    try {
+      const txHashes = await wallet.sweepAllTransaction(sweepAddress);
+      setSweepTxCount(txHashes.length);
+      closeSweepModal();
+      setShowSweepSuccess(true);
+    } catch (err: any) {
+      console.error('Sweep failed:', err);
+      setSweepError(err.message || 'Failed to sweep funds');
+    } finally {
+      setIsSweeping(false);
+    }
   };
 
   // Contact Management
@@ -293,20 +356,17 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
       }`}>
       {/* LEFT: Send Form */}
       <div className={`min-h-0 ${isMobileOrTablet ? 'flex-1 h-full' : 'col-span-7 h-full'}`}>
-        <Card glow className="relative overflow-hidden h-full flex flex-col min-h-0">
-          {/* ... existing card content ... */}
-          <div className="mb-8 flex-shrink-0">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
-                <Send className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl font-bold text-white">{t('send.title')}</h2>
+        <Card glow className="relative overflow-hidden h-full flex flex-col items-center justify-center min-h-0 py-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-accent-primary/10 rounded-lg text-accent-primary">
+              <Send className="w-6 h-6" />
             </div>
-            <p className="text-text-muted text-sm pl-11">{t('send.subtitle')}</p>
+            <h2 className="text-2xl font-bold text-white">{t('send.title')}</h2>
           </div>
+          <p className="text-text-muted text-sm mb-10">{t('send.subtitle')}</p>
 
           {!sentSuccess ? (
-            <div className="space-y-8 flex-1 flex flex-col">
+            <div className={`space-y-6 w-full ${isMobileOrTablet ? '' : 'max-w-2xl px-4'}`}>
               {/* Address Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary flex justify-between">
@@ -322,12 +382,32 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                   )}
                 </label>
                 <div className="relative">
-                  <Input
-                    placeholder="SC1..."
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="font-mono pr-12"
-                  />
+                  {/* Show truncated display when not focused, actual input when focused */}
+                  {address && !isAddressFocused ? (
+                    <div
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm cursor-text pr-12 hover:border-white/20 transition-colors min-h-[46px] flex items-center"
+                      onClick={() => {
+                        setIsAddressFocused(true);
+                        setTimeout(() => addressInputRef.current?.focus(), 0);
+                      }}
+                    >
+                      <TruncatedAddress
+                        address={address}
+                        className="font-mono text-white text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <Input
+                      ref={addressInputRef}
+                      placeholder="SC1..."
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      onFocus={() => setIsAddressFocused(true)}
+                      onBlur={() => setIsAddressFocused(false)}
+                      className="font-mono pr-12"
+                      autoFocus={isAddressFocused && !!address}
+                    />
+                  )}
                   {isMobileOrTablet && (
                     <button
                       type="button"
@@ -335,7 +415,7 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                         setScannerTarget('send');
                         setIsScannerOpen(true);
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-accent-primary transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-text-muted hover:text-accent-primary transition-colors z-10"
                     >
                       <Camera className="w-5 h-5" />
                     </button>
@@ -382,15 +462,28 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
                 )}
               </div>
 
-              {/* Payment ID (Optional) */}
-              <div className="space-y-2">
-                <label className="text-sm text-text-secondary">{t('send.paymentId')}</label>
-                <Input
-                  placeholder={t('send.enterPaymentId')}
-                  value={paymentId}
-                  onChange={(e) => setPaymentId(e.target.value)}
-                  className="font-mono"
-                />
+              {/* Payment ID (Optional) - Collapsible */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentId(!showPaymentId)}
+                  className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${showPaymentId ? 'rotate-180' : ''}`}
+                  />
+                  {t('send.paymentId')}
+                </button>
+                {showPaymentId && (
+                  <div className="mt-2 animate-fade-in">
+                    <Input
+                      placeholder={t('send.enterPaymentId')}
+                      value={paymentId}
+                      onChange={(e) => setPaymentId(e.target.value)}
+                      className="font-mono"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Error/Status */}
@@ -402,19 +495,27 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
               )}
 
               {/* Send Button */}
-              <div className="pt-4 mt-auto">
+              <div className="pt-4 space-y-3">
                 <Button
                   onClick={handleSend}
                   disabled={isSending}
                   className="w-full py-4 text-lg font-bold shadow-xl shadow-accent-primary/10 hover:shadow-accent-primary/20"
                 >
+                  {isSending ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : <Send className="mr-2 w-5 h-5" />}
                   {isSending ? t('send.creatingTransaction') : t('send.sendAssets')}
-                  {!isSending && <ArrowRight className="ml-2 w-5 h-5" />}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowSweepModal(true)}
+                  className="w-full py-3"
+                >
+                  <BrushCleaning className="mr-2 w-4 h-4" />
+                  Sweep All
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center flex-1 text-center py-10 animate-scale-in">
+            <div className={`flex flex-col items-center text-center animate-scale-in w-full ${isMobileOrTablet ? '' : 'max-w-2xl px-4'}`}>
               <div className="w-20 h-20 bg-accent-success/20 rounded-full flex items-center justify-center mb-6 text-accent-success p-1">
                 <div className="w-full h-full border-2 border-accent-success rounded-full flex items-center justify-center">
                   <CheckCircle2 className="w-10 h-10" />
@@ -544,6 +645,190 @@ const SendPage: React.FC<SendPageProps> = ({ initialParams }) => {
             onClose={() => setIsScannerOpen(false)}
           />
         </Suspense>
+      )}
+
+      {/* Sweep All Modal */}
+      {showSweepModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeSweepModal}></div>
+          <div className="bg-[#191928] border border-border-color rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative z-10">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-white">Sweep All Funds</h3>
+              <button onClick={closeSweepModal} className="text-text-muted hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-text-muted text-sm">
+                Send your entire unlocked balance to another address.
+              </p>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-text-secondary">Destination Address</label>
+                  <button
+                    type="button"
+                    onClick={() => setSweepAddress(wallet.address)}
+                    className="text-xs text-accent-primary hover:text-accent-primary/80 transition-colors"
+                    disabled={isSweeping}
+                  >
+                    Use my address
+                  </button>
+                </div>
+                {sweepAddress && !isSweepAddressFocused ? (
+                  <div
+                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm cursor-text hover:border-white/20 transition-colors min-h-[46px] flex items-center"
+                    onClick={() => {
+                      setIsSweepAddressFocused(true);
+                      setTimeout(() => sweepAddressInputRef.current?.focus(), 0);
+                    }}
+                  >
+                    <TruncatedAddress
+                      address={sweepAddress}
+                      className="font-mono text-white text-sm"
+                    />
+                  </div>
+                ) : (
+                  <Input
+                    ref={sweepAddressInputRef}
+                    placeholder="SC1..."
+                    value={sweepAddress}
+                    onChange={(e) => setSweepAddress(e.target.value)}
+                    onFocus={() => setIsSweepAddressFocused(true)}
+                    onBlur={() => setIsSweepAddressFocused(false)}
+                    disabled={isSweeping}
+                    className="font-mono"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck="false"
+                    onKeyDown={(e) => e.key === 'Enter' && handleSweepAll()}
+                    autoFocus={isSweepAddressFocused && !!sweepAddress}
+                  />
+                )}
+              </div>
+
+              {sweepError && <p className="text-red-400 text-xs">{sweepError}</p>}
+
+              <div className="bg-accent-warning/10 border border-accent-warning/20 rounded-xl p-5">
+                <label className="flex items-center gap-4 cursor-pointer group">
+                  <div className="relative flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={sweepConfirmed}
+                      onChange={(e) => setSweepConfirmed(e.target.checked)}
+                      disabled={isSweeping}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center
+                      ${sweepConfirmed
+                        ? 'bg-accent-warning border-accent-warning'
+                        : 'border-accent-warning/50 bg-accent-warning/5 group-hover:border-accent-warning/80'
+                      }
+                      ${isSweeping ? 'opacity-50' : ''}
+                    `}>
+                      {sweepConfirmed && (
+                        <Check className="w-3.5 h-3.5 text-black animate-scale-in" />
+                      )}
+                    </div>
+                  </div>
+                  <span className={`text-sm leading-relaxed transition-colors ${sweepConfirmed ? 'text-accent-warning' : 'text-accent-warning/80'}`}>
+                    I understand this action cannot be undone. All unlocked funds will be sent to the destination address.
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-white/5 flex justify-end gap-3">
+              <Button variant="ghost" onClick={closeSweepModal} disabled={isSweeping}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleSweepAll} disabled={isSweeping || !sweepConfirmed}>
+                {isSweeping ? <Loader2 className="mr-2 w-4 h-4 animate-spin" /> : <BrushCleaning className="mr-2 w-4 h-4" />}
+                {isSweeping ? 'Sweeping...' : 'Sweep All'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sweep External Address Warning Modal */}
+      {showSweepExternalWarning && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowSweepExternalWarning(false)}></div>
+          <div className="bg-[#191928] border border-red-500/30 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative z-10 p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">External Address</h3>
+                <p className="text-red-400 text-sm font-medium">This is not your wallet address</p>
+              </div>
+            </div>
+
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-red-200 leading-relaxed">
+                You are about to sweep <span className="font-bold">ALL funds</span> from this wallet to an external address. This action is <span className="font-bold">irreversible</span>.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-3 mb-6">
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Destination</p>
+              <TruncatedAddress
+                address={sweepAddress}
+                className="font-mono text-xs text-white"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowSweepExternalWarning(false)}
+                disabled={isSweeping}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 border-red-600"
+                onClick={executeSweepAll}
+                disabled={isSweeping}
+              >
+                {isSweeping ? (
+                  <>
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    Sweeping...
+                  </>
+                ) : (
+                  'Yes, Sweep All'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sweep Success Modal */}
+      {showSweepSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSweepSuccess(false)}></div>
+          <div className="bg-[#191928] border border-border-color rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative z-10 text-center p-8">
+            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8 text-green-500" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Sweep Complete</h3>
+            <p className="text-text-muted text-sm mb-6">
+              {sweepTxCount === 1
+                ? 'Your funds have been sent successfully.'
+                : `${sweepTxCount} transactions have been broadcast successfully.`
+              }
+            </p>
+            <Button className="w-full" onClick={() => setShowSweepSuccess(false)}>
+              {t('common.done')}
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

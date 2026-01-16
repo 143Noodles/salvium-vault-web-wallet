@@ -5,7 +5,7 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge } from './UIComponents';
-import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Send, BrushCleaning } from './Icons';
+import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Key } from './Icons';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
@@ -63,14 +63,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
    const [passwordError, setPasswordError] = useState('');
    const [isChangingPassword, setIsChangingPassword] = useState(false);
    const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
-
-   // Sweep All State
-   const [showSweepModal, setShowSweepModal] = useState(false);
-   const [sweepAddress, setSweepAddress] = useState('');
-   const [sweepError, setSweepError] = useState('');
-   const [isSweeping, setIsSweeping] = useState(false);
-   const [showSweepSuccess, setShowSweepSuccess] = useState(false);
-   const [sweepTxCount, setSweepTxCount] = useState(0);
 
    // Check availability
    React.useEffect(() => {
@@ -212,42 +204,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }
    };
 
-   const closeSweepModal = () => {
-      setShowSweepModal(false);
-      setSweepAddress('');
-      setSweepError('');
-   };
-
-   const handleSweepAll = async () => {
-      if (!sweepAddress) {
-         setSweepError('Please enter a destination address');
-         return;
-      }
-
-      setIsSweeping(true);
-      setSweepError('');
-
-      try {
-         const txHashes = await wallet.sweepAllTransaction(sweepAddress);
-         setSweepTxCount(txHashes.length);
-         closeSweepModal();
-         setShowSweepSuccess(true);
-      } catch (err: any) {
-         console.error('Sweep failed:', err);
-         setSweepError(err.message || 'Failed to sweep funds');
-      } finally {
-         setIsSweeping(false);
-      }
-   };
-
    // Get node info from sync status
    const nodeUrl = 'seed01.salvium.io:19081'; // Default node
    const networkHeight = wallet.syncStatus?.networkHeight || 0;
-   const walletHeight = wallet.syncStatus?.walletHeight || 0;
+   const walletHeight = Math.max(0, (wallet.syncStatus?.walletHeight || 1) - 1);
 
    return (
       <>
-         <div className={`animate-fade-in space-y-6 max-w-4xl mx-auto overflow-y-auto custom-scrollbar md:p-0 ${isMobileOrTablet
+         <div className={`animate-fade-in space-y-6 overflow-y-auto custom-scrollbar md:p-0 ${isMobileOrTablet
             ? 'h-full'
             : 'h-[calc(100vh-7rem)]'
             }`}>
@@ -272,7 +236,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                      </div>
 
                      <Button
-                        className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-pink-900/20 shrink-0 w-full md:w-auto"
+                        className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-pink-900/20 shrink-0 w-full md:w-auto px-5 py-2.5 md:px-8 md:py-3"
                         onClick={() => {
                            if (onNavigate) {
                               onNavigate(TabView.SEND, {
@@ -282,7 +246,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            }
                         }}
                      >
-                        <Heart size={16} className="mr-2 fill-white/20" />
+                        <Heart size={18} className="mr-2 fill-white/20" />
                         {t('settings.donate.button')}
                      </Button>
                   </div>
@@ -381,8 +345,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <p className="text-sm text-text-muted max-w-sm">{t('settings.backup.description')}</p>
                         </div>
                      </div>
-                     <Button variant="secondary" size="sm" onClick={() => setShowBackupModal(true)}>
-                        <Download size={14} className="mr-1" />
+                     <Button variant="secondary" onClick={() => setShowBackupModal(true)} className="px-4 py-2 md:px-6 md:py-2.5">
+                        <Download size={16} className="mr-2" />
                         {t('settings.backup.export')}
                      </Button>
                   </div>
@@ -400,7 +364,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                            <p className="text-sm text-text-muted">{t('settings.password.description')}</p>
                         </div>
                      </div>
-                     <Button variant="secondary" size="sm" onClick={() => setShowPasswordModal(true)}>{t('settings.password.update')}</Button>
+                     <Button variant="secondary" onClick={() => setShowPasswordModal(true)} className="px-4 py-2 md:px-6 md:py-2.5">
+                        <Key size={16} className="mr-2" />
+                        {t('settings.password.update')}
+                     </Button>
                   </div>
                </Card>
             </div>
@@ -425,47 +392,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                      </div>
                      <Button
                         variant="secondary"
-                        size="sm"
                         onClick={handleRescan}
                         disabled={isRescanning || wallet.isScanning}
+                        className="px-4 py-2 md:px-6 md:py-2.5"
                      >
                         {isRescanning || wallet.isScanning ? (
                            <>
-                              <Loader2 size={14} className="mr-1 animate-spin" />
+                              <Loader2 size={16} className="mr-2 animate-spin" />
                               {t('settings.blockchain.scanning')}
                            </>
                         ) : (
                            <>
-                              <RefreshCw size={14} className="mr-1" />
+                              <RefreshCw size={16} className="mr-2" />
                               {t('settings.blockchain.rescan')}
                            </>
                         )}
-                     </Button>
-                  </div>
-
-                  <div className="h-[1px] bg-white/5 w-full"></div>
-
-                  {/* Sweep All */}
-                  <div className="flex items-center justify-between">
-                     <div className="flex gap-4">
-                        <div className="p-2.5 bg-bg-primary rounded-lg border border-white/5 h-fit text-text-secondary">
-                           <BrushCleaning size={20} />
-                        </div>
-                        <div>
-                           <h4 className="text-white font-medium mb-1">Sweep All</h4>
-                           <p className="text-sm text-text-muted max-w-sm">
-                              Send entire balance to another address. Consolidates all outputs into one transaction.
-                           </p>
-                        </div>
-                     </div>
-                     <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setShowSweepModal(true)}
-                        disabled={isSweeping}
-                     >
-                        <BrushCleaning size={14} className="mr-1" />
-                        Sweep
                      </Button>
                   </div>
                </Card>
@@ -769,114 +710,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                      <Button
                         className="w-full"
                         onClick={() => setShowPasswordSuccess(false)}
-                     >
-                        {t('common.done')}
-                     </Button>
-                  </Card>
-               </div>
-            )
-         }
-
-         {/* Sweep All Modal */}
-         {
-            showSweepModal && (
-               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-                  <Card className="max-w-md w-full space-y-6 relative animate-scale-up">
-                     <button
-                        onClick={closeSweepModal}
-                        className="absolute top-4 right-4 text-text-muted hover:text-white transition-colors"
-                     >
-                        <X size={20} />
-                     </button>
-
-                     <div className="text-center">
-                        <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
-                           <BrushCleaning size={24} />
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Sweep All Funds</h3>
-                        <p className="text-text-muted text-sm">
-                           This will send your entire unlocked balance to the address below.
-                        </p>
-                     </div>
-
-                     <div className="space-y-4">
-                        <div className="space-y-2">
-                           <div className="flex items-center justify-between">
-                              <label className="text-xs text-text-secondary uppercase font-bold tracking-wider">Destination Address</label>
-                              <button
-                                 type="button"
-                                 onClick={() => setSweepAddress(wallet.address)}
-                                 className="text-xs text-accent-primary hover:text-accent-primary/80 transition-colors"
-                                 disabled={isSweeping}
-                              >
-                                 Use my address
-                              </button>
-                           </div>
-                           <Input
-                              type="text"
-                              placeholder="Enter Salvium address..."
-                              value={sweepAddress}
-                              onChange={(e) => setSweepAddress(e.target.value)}
-                              disabled={isSweeping}
-                              autoCorrect="off"
-                              autoCapitalize="none"
-                              spellCheck="false"
-                              onKeyDown={(e) => e.key === 'Enter' && handleSweepAll()}
-                           />
-                        </div>
-
-                        {sweepError && <p className="text-red-400 text-xs">{sweepError}</p>}
-
-                        <div className="bg-accent-warning/10 border border-accent-warning/20 rounded-xl p-3">
-                           <p className="text-xs text-accent-warning/90 leading-relaxed">
-                              This action cannot be undone. All unlocked funds will be sent to the destination address.
-                           </p>
-                        </div>
-                     </div>
-
-                     <div className="flex gap-3">
-                        <Button variant="ghost" onClick={closeSweepModal} className="flex-1" disabled={isSweeping}>
-                           {t('common.cancel')}
-                        </Button>
-                        <Button className="flex-[2]" onClick={handleSweepAll} disabled={isSweeping}>
-                           {isSweeping ? (
-                              <>
-                                 <Loader2 size={16} className="mr-2 animate-spin" />
-                                 Sweeping...
-                              </>
-                           ) : (
-                              <>
-                                 <BrushCleaning size={16} className="mr-2" />
-                                 Sweep All
-                              </>
-                           )}
-                        </Button>
-                     </div>
-                  </Card>
-               </div>
-            )
-         }
-
-         {/* Sweep Success Modal */}
-         {
-            showSweepSuccess && (
-               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-                  <Card className="max-w-sm w-full space-y-6 relative animate-scale-up text-center">
-                     <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                        <CheckCircle2 size={32} className="text-green-500" />
-                     </div>
-                     <div>
-                        <h3 className="text-xl font-bold text-white mb-2">Sweep Complete</h3>
-                        <p className="text-text-muted text-sm">
-                           {sweepTxCount === 1
-                              ? 'Your funds have been sent successfully.'
-                              : `${sweepTxCount} transactions have been broadcast successfully.`
-                           }
-                        </p>
-                     </div>
-                     <Button
-                        className="w-full"
-                        onClick={() => setShowSweepSuccess(false)}
                      >
                         {t('common.done')}
                      </Button>

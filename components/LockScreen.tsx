@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Button, Input } from './UIComponents';
-import { Lock, ArrowUpRight, LogOut, Loader2, ScanFace } from './Icons';
+import { Lock, LogOut, Loader2, ScanFace } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { BiometricService } from '../services/BiometricService';
 
@@ -128,17 +128,8 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="mr-2 animate-spin" />
-                    {t('lockScreen.unlocking')}
-                  </>
-                ) : (
-                  <>
-                    {t('lockScreen.unlock')}
-                    <ArrowUpRight size={18} className="ml-2" />
-                  </>
-                )}
+                {isLoading ? <Loader2 size={18} className="mr-2 animate-spin" /> : <Lock size={18} className="mr-2" />}
+                {isLoading ? t('lockScreen.unlocking') : t('lockScreen.unlock')}
               </Button>
 
               {isBioAvailable && BiometricService.isEnabled() && (

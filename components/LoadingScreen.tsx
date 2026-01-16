@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { RefreshCw, Download, Shield } from './Icons';
 import { useWallet } from '../services/WalletContext';
 
@@ -14,15 +14,46 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
   // This prevents the screen from dismissing immediately if the restored wallet state says 100%
   const [scanInitiated, setScanInitiated] = useState(false);
 
+  // Track the maximum progress seen to prevent jumping backward
+  const [maxProgress, setMaxProgress] = useState(0);
+
   // Get real progress from wallet context
   const progress = wallet.scanProgress;
   const isScanning = wallet.isScanning;
 
-  // Use the new unified progress fields (v5.2.8)
-  // Prefer syncStatus.progress (calculated globally in WalletContext) to avoid >100% issues
-  const percentage = wallet.syncStatus.progress > 0
-    ? wallet.syncStatus.progress
-    : (progress?.percentage ?? (progress?.overallProgress ? progress.overallProgress * 100 : 0));
+  // Calculate smooth progress based on block heights (not phase-based percentages)
+  // This gives a consistent 0-100% progression without jumping around
+  const { walletHeight, daemonHeight, scanStartHeight } = wallet.syncStatus;
+
+  const rawPercentage = useMemo(() => {
+    // If we have scanStartHeight and daemonHeight, calculate progress based on blocks
+    if (scanStartHeight !== undefined && daemonHeight > 0 && daemonHeight > scanStartHeight) {
+      const totalBlocks = daemonHeight - scanStartHeight;
+      const scannedBlocks = Math.max(0, walletHeight - scanStartHeight);
+      return Math.min(100, Math.max(0, (scannedBlocks / totalBlocks) * 100));
+    }
+    // Fallback to the reported progress if heights aren't available
+    return wallet.syncStatus.progress > 0
+      ? wallet.syncStatus.progress
+      : (progress?.percentage ?? (progress?.overallProgress ? progress.overallProgress * 100 : 0));
+  }, [walletHeight, daemonHeight, scanStartHeight, wallet.syncStatus.progress, progress]);
+
+  // Only allow progress to increase, never decrease (prevents jumping backward)
+  // Reset maxProgress when scan is initiated fresh
+  useEffect(() => {
+    if (scanInitiated && rawPercentage > maxProgress) {
+      setMaxProgress(rawPercentage);
+    }
+  }, [rawPercentage, scanInitiated, maxProgress]);
+
+  // Reset max progress when starting a new scan
+  useEffect(() => {
+    if (!scanInitiated) {
+      setMaxProgress(0);
+    }
+  }, [scanInitiated]);
+
+  const percentage = scanInitiated ? Math.max(maxProgress, rawPercentage) : 0;
 
   const statusMessage = progress?.statusMessage ?? 'Syncing wallet...';
   const transactionsFound = progress?.transactionsFound ?? 0;

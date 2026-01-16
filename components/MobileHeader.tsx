@@ -120,14 +120,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ activeTab, onNavigat
                                         <Database size={14} />
                                         <span className="text-xs uppercase tracking-wider">{t('network.walletHeight')}</span>
                                     </div>
-                                    <p className="font-mono text-xl text-white font-bold">{wallet.syncStatus.walletHeight.toLocaleString()}</p>
+                                    <p className="font-mono text-xl text-white font-bold">{Math.max(0, wallet.syncStatus.walletHeight - 1).toLocaleString()}</p>
                                 </div>
                                 <div className="p-3 bg-black/20 rounded-xl border border-white/5">
                                     <div className="flex items-center gap-2 mb-2 text-text-muted shrink-0">
                                         <Server size={14} />
                                         <span className="text-xs uppercase tracking-wider">{t('network.daemonHeight')}</span>
                                     </div>
-                                    <p className="font-mono text-xl text-white font-bold">{wallet.syncStatus.daemonHeight.toLocaleString()}</p>
+                                    <p className="font-mono text-xl text-white font-bold">{Math.max(0, wallet.syncStatus.daemonHeight - 1).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>

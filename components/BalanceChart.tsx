@@ -164,7 +164,7 @@ const BalanceChart: React.FC = () => {
     <div className="w-full h-full flex flex-col">
       {/* Timeframe selector moved inside chart component for better control */}
       <div className="flex justify-between items-center mb-4">
-        <p className="text-xs text-text-muted font-mono">{getTimeframeLabel()}</p>
+        <p className="text-xs text-text-muted font-mono pl-2">{getTimeframeLabel()}</p>
         <div className="flex p-1 bg-black/40 rounded-lg border border-white/5">
           {(['1D', '1W', '1M', '1Y', 'ALL'] as TimeFrame[]).map((period) => (
             <button

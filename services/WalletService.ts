@@ -51,6 +51,7 @@ export interface SyncStatus {
   daemonHeight: number;
   isSyncing: boolean;
   progress: number;         // 0-100
+  scanStartHeight?: number; // Height where current scan started (for smooth progress calculation)
 }
 
 interface SeedValidationResult {

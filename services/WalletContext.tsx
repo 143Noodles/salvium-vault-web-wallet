@@ -1537,12 +1537,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 }
             } catch (e) { /* ignore */ }
 
-            setSyncStatus(prev => ({
-                ...prev,
-                daemonHeight: networkHeight,
-                isSyncing: true
-            }));
-
             // Track last saved height to avoid excessive localStorage writes
             let lastSavedHeight = walletHeight;
             const SAVE_INTERVAL_BLOCKS = 1000; // Save every 1000 blocks
@@ -1562,6 +1556,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             const scanStartHeight = isIncremental
                 ? Math.floor(walletHeight / CHUNK_SIZE) * CHUNK_SIZE
                 : walletHeight;
+
+            // Set scanStartHeight for smooth progress calculation in LoadingScreen
+            setSyncStatus(prev => ({
+                ...prev,
+                daemonHeight: networkHeight,
+                isSyncing: true,
+                scanStartHeight: scanStartHeight,
+                progress: 0 // Reset progress at scan start
+            }));
 
             // Skip scan if we're already at the network height
             if (scanStartHeight > networkHeight) {

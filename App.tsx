@@ -58,6 +58,7 @@ const AppContent: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('initializing');
   const [activeTab, setActiveTab] = useState<TabView>(TabView.DASHBOARD);
   const previousTabRef = useRef<TabView>(TabView.DASHBOARD);
+  const [dashboardResetKey, setDashboardResetKey] = useState(0);
 
   const [navParams, setNavParams] = useState<any>(null);
 
@@ -66,6 +67,12 @@ const AppContent: React.FC = () => {
       setNavParams(params);
     } else {
       setNavParams(null);
+    }
+
+    // If clicking Dashboard while already on Dashboard, trigger overlay close
+    if (tab === TabView.DASHBOARD && activeTab === TabView.DASHBOARD) {
+      setDashboardResetKey(prev => prev + 1);
+      return;
     }
 
     if (tab === TabView.SETTINGS && activeTab === TabView.SETTINGS) {
@@ -522,7 +529,7 @@ const AppContent: React.FC = () => {
                 </div>
 
                 <div className="text-xs font-mono text-text-muted">
-                  {t('network.height')}: <span className="text-text-secondary font-bold">{wallet.syncStatus.walletHeight.toLocaleString()}</span> / {wallet.syncStatus.daemonHeight.toLocaleString()}
+                  {t('network.height')}: <span className="text-text-secondary font-bold">{Math.max(0, wallet.syncStatus.walletHeight - 1).toLocaleString()}</span> / {Math.max(0, wallet.syncStatus.daemonHeight - 1).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -584,7 +591,7 @@ const AppContent: React.FC = () => {
           >
             {activeTab === TabView.DASHBOARD && (
               <div className="animate-fade-in h-full flex flex-col">
-                <Dashboard stats={wallet.stats} onNavigate={handleNavigate} />
+                <Dashboard stats={wallet.stats} onNavigate={handleNavigate} resetKey={dashboardResetKey} />
               </div>
             )}
 

@@ -10,6 +10,10 @@ import { formatSAL } from '../utils/format';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 
+// Unlock confirmations matching Salvium protocol
+const STANDARD_UNLOCK_CONFIRMATIONS = 10;  // Regular transfers
+const MINING_UNLOCK_CONFIRMATIONS = 60;    // Mining/yield/stake returns
+
 interface TransactionOverlayProps {
     isOpen: boolean;
     onClose: () => void;
@@ -36,6 +40,40 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
         const networkHeight = wallet.syncStatus?.daemonHeight || 0;
         if (networkHeight === 0) return transaction.confirmations || 0;
         return Math.max(0, networkHeight - transaction.height);
+    }, [transaction, wallet.syncStatus?.daemonHeight]);
+
+    // Calculate lock status based on transaction type
+    const lockStatus = useMemo(() => {
+        if (!transaction) return { isUnlocked: false, blocksToUnlock: 0, requiredConfirmations: 10 };
+
+        const currentHeight = wallet.syncStatus?.daemonHeight || 0;
+        const label = transaction.tx_type_label?.toLowerCase() || '';
+
+        // Protocol outputs (mining/yield/stake incoming) need 60 confs, regular transfers need 10
+        const isIncomingProtocol = transaction.type === 'in' &&
+            (label === 'mining' || label === 'yield' || label === 'stake');
+        const requiredConfirmations = isIncomingProtocol
+            ? MINING_UNLOCK_CONFIRMATIONS
+            : STANDARD_UNLOCK_CONFIRMATIONS;
+
+        // If no height, tx is in mempool (pending)
+        if (!transaction.height || transaction.height === 0) {
+            return { isUnlocked: false, blocksToUnlock: requiredConfirmations, requiredConfirmations };
+        }
+
+        // Calculate unlock height
+        let unlockHeight = transaction.height + requiredConfirmations;
+
+        // Check unlock_time if present (can be block height or timestamp)
+        if (transaction.unlock_time && transaction.unlock_time > 0 && transaction.unlock_time < 500000000) {
+            // It's a block height - use the higher of calculated or specified
+            unlockHeight = Math.max(unlockHeight, transaction.unlock_time);
+        }
+
+        const blocksToUnlock = Math.max(0, unlockHeight - currentHeight);
+        const isUnlocked = currentHeight >= unlockHeight;
+
+        return { isUnlocked, blocksToUnlock, requiredConfirmations };
     }, [transaction, wallet.syncStatus?.daemonHeight]);
 
     if (!isOpen || !txId) return null;
@@ -115,8 +153,11 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
             {!isMobileOrTablet && (
                 <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0">
                     <h3 className="font-bold text-lg text-white">{t('transactions.details')}</h3>
-                    <button onClick={onClose} className="text-text-muted hover:text-white transition-colors">
-                        <X size={20} />
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-lg bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 hover:text-accent-primary transition-colors"
+                    >
+                        <X size={24} />
                     </button>
                 </div>
             )}
@@ -165,19 +206,26 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
                             </p>
                         </div>
 
-                        {/* Confirmations */}
+                        {/* Confirmations / Lock Status */}
                         <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                             <p className="text-xs text-text-muted uppercase tracking-wider mb-1">{t('transactions.confirmations')}</p>
                             <div className="flex items-center gap-2">
                                 <p className="text-lg font-bold text-white">
                                     {confirmations}
                                 </p>
-                                {confirmations >= 10 ? (
-                                    <Badge variant="success">{t('transactions.confirmed')}</Badge>
+                                {lockStatus.isUnlocked ? (
+                                    <Badge variant="success">{t('transactions.unlocked')}</Badge>
+                                ) : confirmations === 0 ? (
+                                    <Badge variant="warning">{t('transactions.pending')}</Badge>
                                 ) : (
-                                    <Badge variant="warning">{t('transactions.unconfirmed')}</Badge>
+                                    <Badge variant="warning">{t('transactions.locked')}</Badge>
                                 )}
                             </div>
+                            {!lockStatus.isUnlocked && lockStatus.blocksToUnlock > 0 && (
+                                <p className="text-xs text-text-muted mt-1">
+                                    {lockStatus.blocksToUnlock} {t('transactions.blocksToUnlock')}
+                                </p>
+                            )}
                         </div>
                     </div>
 

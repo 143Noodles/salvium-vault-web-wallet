@@ -6,7 +6,7 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge, Overlay } from './UIComponents';
-import { Layers, TrendingUp, History, ArrowUpRight, CheckCircle2, Clock, AlertCircle } from './Icons';
+import { Layers, TrendingUp, History, CheckCircle2, Clock, AlertCircle, Loader2 } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { formatSAL, formatSAL3, formatSALCompact } from '../utils/format';
 
@@ -484,7 +484,7 @@ const StakingPage: React.FC = () => {
             {/* Create Stake Form */}
             <Card glow className="flex flex-col h-full md:overflow-y-auto custom-scrollbar">
                {/* Mobile Only: Navigation Buttons */}
-               <div className={`grid grid-cols-2 gap-3 mb-12 ${!isMobileOrTablet ? 'lg:hidden' : ''}`}>
+               <div className={`grid grid-cols-2 gap-3 mb-6 ${!isMobileOrTablet ? 'lg:hidden' : ''}`}>
                   <Button variant="secondary" className="py-4" onClick={() => setIsActiveStakesOpen(true)}>
                      <CheckCircle2 className="mr-2 w-4 h-4" />
                      {t('staking.activeStakes')}
@@ -496,7 +496,7 @@ const StakingPage: React.FC = () => {
                </div>
 
                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                  <Layers className="text-accent-secondary w-5 h-5" />
+                  <TrendingUp className="text-accent-secondary w-5 h-5" />
                   {t('staking.createNewStake')}
                </h3>
 
@@ -576,17 +576,8 @@ const StakingPage: React.FC = () => {
                         disabled={!isValidStakeAmount(stakeAmount) || validationState?.type === 'error' || isStaking}
                         onClick={handleStake}
                      >
-                        {isStaking ? (
-                           <>
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                              {t('staking.creatingStake')}
-                           </>
-                        ) : (
-                           <>
-                              {t('staking.stakeAssets')}
-                              <ArrowUpRight className="ml-2 w-[1.125rem] h-[1.125rem]" />
-                           </>
-                        )}
+                        {isStaking ? <Loader2 className="mr-2 w-[1.125rem] h-[1.125rem] animate-spin" /> : <TrendingUp className="mr-2 w-[1.125rem] h-[1.125rem]" />}
+                        {isStaking ? t('staking.creatingStake') : t('staking.stakeAssets')}
                      </Button>
 
                   </div>
