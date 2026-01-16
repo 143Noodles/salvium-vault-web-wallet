@@ -363,7 +363,23 @@ class CSPScanService {
     const maxWorkerCount = isIncremental ? Math.max(1, Math.floor(getOptimalWorkerCount() / 2)) : getOptimalWorkerCount();
     const initialWorkerCount = Math.max(1, Math.min(maxWorkerCount, isAndroid ? 2 : 2));
 
-    // v5.1.0: Get subaddress map for ownership verification (reduces Phase 1 matches by 89%)
+    // Get return addresses for RETURN tx detection
+    let returnAddressesCsv: string = '';
+    try {
+      if (typeof wallet.get_return_addresses_csv === 'function') {
+        returnAddressesCsv = wallet.get_return_addresses_csv();
+        if (returnAddressesCsv) {
+          const count = returnAddressesCsv.split(',').filter(s => s.length === 64).length;
+          if (typeof (wallet as any).add_return_addresses === 'function' && count > 0) {
+            (wallet as any).add_return_addresses(returnAddressesCsv);
+          }
+        }
+      }
+    } catch (e) {
+      // RETURN tx detection disabled
+    }
+
+    // Get subaddress map (after adding return addresses)
     let subaddressMapCsv: string = '';
     try {
       if (typeof wallet.get_subaddress_spend_keys_csv === 'function') {
@@ -392,9 +408,10 @@ class CSPScanService {
         kViewIncoming: kViewIncoming || '',
         sViewBalance: sViewBalance || '',
         keyImagesCsv,
-        subaddressMapCsv,  // v5.1.0: Subaddress map for ownership verification
-        stakeReturnHeights,  // Pass stake return heights for coinbase filtering
-        apiBaseUrl: '/vault',  // API endpoints are at /vault/api/
+        subaddressMapCsv,
+        returnAddressesCsv,
+        stakeReturnHeights,
+        apiBaseUrl: '/vault',
         // Auto-tuning: start small, ramp up to max as device allows
         autoTune: true,
         maxWorkerCount,
@@ -452,6 +469,49 @@ class CSPScanService {
         // IMPORTANT: Do not silently continue on Phase 2 failures.
         // A partial Phase 2 ingest leads to missing transactions.
         outputsFound = await this.targetedRescan(wallet, matchedChunks, allMatches, onProgress, startHeight, endHeight, isIncremental);
+      }
+
+      // Phase 2b: RETURN Transaction Discovery
+      // After Phase 2 ingests outgoing transfers, check for new return addresses
+      if (!returnAddressesCsv && typeof wallet.get_return_addresses_csv === 'function') {
+        const newReturnAddressesCsv = wallet.get_return_addresses_csv();
+        if (newReturnAddressesCsv && newReturnAddressesCsv.length >= 64) {
+          const returnAddressCount = newReturnAddressesCsv.split(',').filter((s: string) => s.length === 64).length;
+          console.log(`[CSPScanService] Phase 2b: Found ${returnAddressCount} return addresses, rescanning...`);
+
+          if (onProgress) {
+            onProgress({
+              progress: 0.95, phase: '2b', message: 'Scanning for RETURN transactions...',
+              scannedBlocks: 0, totalBlocks: 0, completedChunks: 0, totalChunks: 0,
+              viewTagMatches: 0, bytesReceived: 0, blocksPerSecond: 0,
+              overallProgress: 0.95, percentage: 95, transactionsFound: outputsFound,
+              statusMessage: 'Scanning for RETURN transactions...'
+            });
+          }
+
+          this.scanner.updateReturnAddresses(newReturnAddressesCsv);
+          const returnResult = await this.scanner.scan(startHeight, endHeight);
+          const returnMatches = returnResult.matches || [];
+          const returnMatchedChunks = returnResult.matchedChunks || [];
+
+          if (returnMatchedChunks.length > 0 && returnMatches.length > 0) {
+            const alreadyProcessed = new Set(matchedChunks);
+            const newChunks = returnMatchedChunks.filter((c: number) => !alreadyProcessed.has(c));
+
+            if (newChunks.length > 0) {
+              const newMatches = returnMatches.filter((m: any) => {
+                const chunkStart = Math.floor(m.height / 720) * 720;
+                return newChunks.includes(chunkStart);
+              });
+
+              if (newMatches.length > 0) {
+                const returnOutputsFound = await this.targetedRescan(wallet, newChunks, newMatches, onProgress, startHeight, endHeight, true);
+                outputsFound += returnOutputsFound;
+                console.log(`[CSPScanService] Phase 2b: Ingested ${returnOutputsFound} RETURN outputs`);
+              }
+            }
+          }
+        }
       }
 
       // ================================================================

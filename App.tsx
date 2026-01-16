@@ -621,6 +621,7 @@ const AppContent: React.FC = () => {
                   setAppState('loading');
                 }}
                 onNavigate={handleNavigate}
+                onReset={handleReset}
               />
             )}
           </div>

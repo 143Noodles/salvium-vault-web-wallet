@@ -228,6 +228,11 @@
       "title": "Doar para Salvium.Tools",
       "description": "Ajude a manter o Salvium Vault funcionando. Cada doação apoia os servidores e o desenvolvimento.",
       "button": "Doar Agora"
+    },
+    "resetWallet": {
+      "title": "Resetar Carteira",
+      "description": "Apagar dados da carteira e recomeçar. Certifique-se de ter salvado sua frase seed.",
+      "button": "Resetar"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Desbloqueando...",
     "biometricUnlock": "Desbloquear com Biometria",
     "biometricFailed": "Desbloqueio biométrico falhou: Senha alterada?",
-    "resetWallet": "Resetar Carteira (Sair)"
+    "resetWallet": "Resetar Carteira (Sair)",
+    "resetConfirmTitle": "Resetar Carteira?",
+    "resetConfirmDescription": "Isso excluirá permanentemente os dados da sua carteira deste dispositivo.",
+    "resetConfirmWarning": "Você perderá acesso aos seus fundos a menos que tenha salvado sua frase seed de 25 palavras ou exportado um arquivo de backup salvium.vault.",
+    "resetConfirmButton": "Resetar Carteira",
+    "resetConfirmCheckbox": "Eu entendo que perderei acesso sem minha frase seed ou backup"
   },
   "network": {
     "status": "Status da Rede",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Ver no Explorador",
     "block": "Bloco",
     "date": "Data",
-    "type": "Tipo",
+    "typeHash": "Tipo / Hash",
     "amount": "Valor",
     "status": "Status",
     "broadcasting": "Transmitindo",

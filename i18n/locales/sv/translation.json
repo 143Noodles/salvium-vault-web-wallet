@@ -228,6 +228,11 @@
       "title": "Donera till Salvium.Tools",
       "description": "Hjälp till att hålla Salvium Vault igång. Varje donation stöder servrar och utveckling.",
       "button": "Donera Nu"
+    },
+    "resetWallet": {
+      "title": "Återställ Plånbok",
+      "description": "Ta bort plånboksdata och börja om. Se till att du har sparat din seed-fras.",
+      "button": "Återställ"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Låser upp...",
     "biometricUnlock": "Lås Upp med Biometri",
     "biometricFailed": "Biometrisk upplåsning misslyckades: Lösenord ändrat?",
-    "resetWallet": "Återställ Plånbok (Logga Ut)"
+    "resetWallet": "Återställ Plånbok (Logga Ut)",
+    "resetConfirmTitle": "Återställ Plånbok?",
+    "resetConfirmDescription": "Detta kommer att permanent radera din plånboksdata från denna enhet.",
+    "resetConfirmWarning": "Du kommer att förlora åtkomst till dina medel om du inte har sparat din 25-ords seed-fras eller exporterat en salvium.vault-säkerhetskopia.",
+    "resetConfirmButton": "Återställ Plånbok",
+    "resetConfirmCheckbox": "Jag förstår att jag kommer att förlora åtkomst utan min seed-fras eller säkerhetskopia"
   },
   "network": {
     "status": "Nätverksstatus",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Visa i Explorer",
     "block": "Block",
     "date": "Datum",
-    "type": "Typ",
+    "typeHash": "Typ / Hash",
     "amount": "Belopp",
     "status": "Status",
     "broadcasting": "Sänder",

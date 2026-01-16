@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
-import { ArrowUpRight, ArrowDownLeft, Layers, Clock, ChevronLeft, ChevronRight } from './Icons';
+import { ArrowUpRight, ArrowDownLeft, Layers, Clock, ChevronLeft, ChevronRight, Lock } from './Icons';
 import { Badge, Button } from './UIComponents';
 import { formatSAL } from '../utils/format';
 import { WalletTransaction } from '../services/WalletService';
@@ -179,7 +179,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                   return <Badge variant="warning" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto">{t('transactions.pending')}</Badge>;
                 } else {
                   return (
-                    <Badge variant="neutral" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto">
+                    <Badge variant="neutral" className="text-[10px] px-1.5 py-0.5 h-fit ml-auto flex items-center gap-1">
+                      <Lock size={10} />
                       {t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}
                     </Badge>
                   );
@@ -282,7 +283,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                         return <span className="text-[10px] text-accent-warning">{t('transactions.pending')}</span>;
                       }
                       if (!lockStatus.isUnlocked) {
-                        return <span className="text-[10px] text-text-muted">{t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}</span>;
+                        return <span className="text-[10px] text-text-muted flex items-center gap-1"><Lock size={10} />{t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}</span>;
                       }
                       return null; // Don't show "Confirmed" on mobile list to save space, usually implies successful
                     })()}
@@ -302,7 +303,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = f
                       return <Badge variant="warning">{t('transactions.pending')}</Badge>;
                     } else {
                       return (
-                        <Badge variant="neutral">
+                        <Badge variant="neutral" className="inline-flex items-center gap-1">
+                          <Lock size={12} />
                           {t('transactions.blocksRemaining', { count: lockStatus.blocksToUnlock })}
                         </Badge>
                       );

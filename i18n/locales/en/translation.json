@@ -228,6 +228,11 @@
       "title": "Donate to Salvium.Tools",
       "description": "Help keep Salvium Vault running. Every donation supports servers and development.",
       "button": "Donate Now"
+    },
+    "resetWallet": {
+      "title": "Reset Wallet",
+      "description": "Delete wallet data and start fresh. Make sure you have your seed phrase saved.",
+      "button": "Reset"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Unlocking...",
     "biometricUnlock": "Unlock with Biometrics",
     "biometricFailed": "Biometric unlock failed: Password changed?",
-    "resetWallet": "Reset Wallet (Log Out)"
+    "resetWallet": "Reset Wallet (Log Out)",
+    "resetConfirmTitle": "Reset Wallet?",
+    "resetConfirmDescription": "This will permanently delete your wallet data from this device.",
+    "resetConfirmWarning": "You will lose access to your funds unless you have saved your 25-word seed phrase or exported a salvium.vault backup file.",
+    "resetConfirmButton": "Reset Wallet",
+    "resetConfirmCheckbox": "I understand I will lose access without my seed phrase or backup"
   },
   "network": {
     "status": "Network Status",

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Button, Input } from './UIComponents';
-import { Lock, LogOut, Loader2, ScanFace } from './Icons';
+import { Lock, LogOut, Loader2, ScanFace, AlertTriangle, X, Trash2 } from './Icons';
 import { useWallet } from '../services/WalletContext';
 import { BiometricService } from '../services/BiometricService';
 
@@ -17,6 +17,8 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isBioAvailable, setIsBioAvailable] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmed, setResetConfirmed] = useState(false);
 
   React.useEffect(() => {
     const checkBio = async () => {
@@ -87,6 +89,18 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
     return () => window.visualViewport?.removeEventListener('resize', handleResize);
   }, []);
 
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetConfirmed(false);
+  };
+
+  const handleResetWallet = () => {
+    if (resetConfirmed) {
+      onReset();
+      closeResetModal();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-bg-primary overflow-y-auto custom-scrollbar">
       <div className="min-h-full flex items-center justify-center p-4">
@@ -149,7 +163,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
             {/* Reset Option */}
             <div className="pt-4 border-t border-white/5 w-full">
               <button
-                onClick={onReset}
+                onClick={() => setShowResetModal(true)}
                 className="flex items-center justify-center gap-2 text-xs text-text-muted hover:text-red-400 transition-colors w-full py-2 group"
                 disabled={isLoading}
               >
@@ -160,6 +174,60 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock, onReset }) => {
           </div>
         </Card>
       </div>
+
+      {/* Reset Wallet Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+          <Card className="max-w-md w-full space-y-6 relative animate-scale-up">
+            <button
+              onClick={closeResetModal}
+              className="absolute top-4 right-4 text-text-muted hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={32} className="text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{t('lockScreen.resetConfirmTitle')}</h3>
+              <p className="text-text-muted text-sm">{t('lockScreen.resetConfirmDescription')}</p>
+            </div>
+
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+              <p className="text-sm text-red-400 leading-relaxed">
+                {t('lockScreen.resetConfirmWarning')}
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={resetConfirmed}
+                onChange={(e) => setResetConfirmed(e.target.checked)}
+                className="mt-0.5 w-5 h-5 rounded border-white/20 bg-white/5 text-red-500 focus:ring-red-500/50 focus:ring-offset-0 cursor-pointer"
+              />
+              <span className="text-sm text-text-muted group-hover:text-text-secondary transition-colors">
+                {t('lockScreen.resetConfirmCheckbox')}
+              </span>
+            </label>
+
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={closeResetModal} className="flex-1">
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handleResetWallet}
+                disabled={!resetConfirmed}
+                className="flex-[2] bg-red-600 hover:bg-red-500 disabled:bg-red-600/50 disabled:cursor-not-allowed"
+              >
+                <Trash2 size={16} className="mr-2" />
+                {t('lockScreen.resetConfirmButton')}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

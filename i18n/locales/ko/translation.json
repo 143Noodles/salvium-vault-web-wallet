@@ -228,6 +228,11 @@
       "title": "Salvium.Tools에 기부",
       "description": "Salvium Vault 운영을 도와주세요. 모든 기부는 서버와 개발을 지원합니다.",
       "button": "지금 기부"
+    },
+    "resetWallet": {
+      "title": "지갑 초기화",
+      "description": "지갑 데이터를 삭제하고 새로 시작합니다. 시드 문구를 저장했는지 확인하세요.",
+      "button": "초기화"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "잠금 해제 중...",
     "biometricUnlock": "생체 인식으로 잠금 해제",
     "biometricFailed": "생체 인식 잠금 해제 실패: 비밀번호가 변경되었나요?",
-    "resetWallet": "지갑 초기화 (로그아웃)"
+    "resetWallet": "지갑 초기화 (로그아웃)",
+    "resetConfirmTitle": "지갑을 초기화하시겠습니까?",
+    "resetConfirmDescription": "이 기기에서 지갑 데이터가 영구적으로 삭제됩니다.",
+    "resetConfirmWarning": "25단어 시드 문구를 저장하거나 salvium.vault 백업 파일을 내보내지 않은 경우 자금에 대한 접근 권한을 잃게 됩니다.",
+    "resetConfirmButton": "지갑 초기화",
+    "resetConfirmCheckbox": "시드 문구나 백업 없이는 접근할 수 없음을 이해합니다"
   },
   "network": {
     "status": "네트워크 상태",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "탐색기에서 보기",
     "block": "블록",
     "date": "날짜",
-    "type": "유형",
+    "typeHash": "유형 / 해시",
     "amount": "금액",
     "status": "상태",
     "broadcasting": "브로드캐스팅",

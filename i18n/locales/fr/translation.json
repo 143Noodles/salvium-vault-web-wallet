@@ -228,6 +228,11 @@
       "title": "Faire un Don à Salvium.Tools",
       "description": "Aidez à maintenir Salvium Vault en fonctionnement. Chaque don soutient les serveurs et le développement.",
       "button": "Faire un Don"
+    },
+    "resetWallet": {
+      "title": "Réinitialiser le Portefeuille",
+      "description": "Supprimer les données du portefeuille et recommencer. Assurez-vous d'avoir sauvegardé votre phrase seed.",
+      "button": "Réinitialiser"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Déverrouillage...",
     "biometricUnlock": "Déverrouiller avec Biométrie",
     "biometricFailed": "Échec du déverrouillage biométrique : Mot de passe changé ?",
-    "resetWallet": "Réinitialiser le Portefeuille (Déconnexion)"
+    "resetWallet": "Réinitialiser le Portefeuille (Déconnexion)",
+    "resetConfirmTitle": "Réinitialiser le Portefeuille ?",
+    "resetConfirmDescription": "Cela supprimera définitivement les données de votre portefeuille de cet appareil.",
+    "resetConfirmWarning": "Vous perdrez l'accès à vos fonds sauf si vous avez sauvegardé votre phrase seed de 25 mots ou exporté un fichier de sauvegarde salvium.vault.",
+    "resetConfirmButton": "Réinitialiser le Portefeuille",
+    "resetConfirmCheckbox": "Je comprends que je perdrai l'accès sans ma phrase seed ou sauvegarde"
   },
   "network": {
     "status": "État du Réseau",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Voir dans l'Explorateur",
     "block": "Bloc",
     "date": "Date",
-    "type": "Type",
+    "typeHash": "Type / Hash",
     "amount": "Montant",
     "status": "Statut",
     "broadcasting": "Diffusion",

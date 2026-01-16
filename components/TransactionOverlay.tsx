@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ExternalLink, X, Copy, Check, ArrowDownLeft, ArrowUpRight, Clock, RefreshCw, AlertTriangle, Loader2 } from './Icons';
+import { ExternalLink, X, Copy, Check, ArrowDownLeft, ArrowUpRight, Clock, RefreshCw, AlertTriangle, Loader2, Lock } from './Icons';
 import { Overlay, Button, Badge } from './UIComponents';
 import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 import { useWallet } from '../services/WalletContext';
@@ -27,6 +27,21 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
     const [showReturnConfirm, setShowReturnConfirm] = useState(false);
     const [isReturning, setIsReturning] = useState(false);
     const [returnError, setReturnError] = useState<string | null>(null);
+    const overlayRef = useRef<HTMLDivElement>(null);
+
+    // Close overlay when clicking outside
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (overlayRef.current && !overlayRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen, onClose]);
 
     // Find the transaction from wallet context
     const transaction = useMemo(() => {
@@ -214,11 +229,11 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
                                     {confirmations}
                                 </p>
                                 {lockStatus.isUnlocked ? (
-                                    <Badge variant="success">{t('transactions.unlocked')}</Badge>
+                                    <Badge variant="success">{t('transactions.confirmed')}</Badge>
                                 ) : confirmations === 0 ? (
                                     <Badge variant="warning">{t('transactions.pending')}</Badge>
                                 ) : (
-                                    <Badge variant="warning">{t('transactions.locked')}</Badge>
+                                    <Badge variant="warning" className="inline-flex items-center gap-1"><Lock size={12} />{t('transactions.locked')}</Badge>
                                 )}
                             </div>
                             {!lockStatus.isUnlocked && lockStatus.blocksToUnlock > 0 && (
@@ -339,7 +354,10 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
     // Desktop: Inline Absolute Overlay
     if (!isMobileOrTablet) {
         return (
-            <div className="absolute inset-0 z-50 bg-[#151525] flex flex-col animate-fade-in rounded-2xl overflow-hidden">
+            <div
+                ref={overlayRef}
+                className="absolute inset-0 z-50 bg-[#151525] flex flex-col animate-fade-in rounded-2xl overflow-hidden"
+            >
                 <Content />
             </div>
         );

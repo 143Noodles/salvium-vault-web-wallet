@@ -228,6 +228,11 @@
       "title": "Salvium.Tools'a Bağış Yapın",
       "description": "Salvium Vault'un çalışmasına yardım edin. Her bağış sunucuları ve geliştirmeyi destekler.",
       "button": "Şimdi Bağış Yap"
+    },
+    "resetWallet": {
+      "title": "Cüzdanı Sıfırla",
+      "description": "Cüzdan verilerini sil ve yeniden başla. Tohum ifadenizi kaydettiğinizden emin olun.",
+      "button": "Sıfırla"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Açılıyor...",
     "biometricUnlock": "Biyometri ile Aç",
     "biometricFailed": "Biyometrik kilit açma başarısız: Şifre değişti mi?",
-    "resetWallet": "Cüzdanı Sıfırla (Çıkış Yap)"
+    "resetWallet": "Cüzdanı Sıfırla (Çıkış Yap)",
+    "resetConfirmTitle": "Cüzdanı Sıfırla?",
+    "resetConfirmDescription": "Bu, cüzdan verilerinizi bu cihazdan kalıcı olarak silecektir.",
+    "resetConfirmWarning": "25 kelimelik tohum ifadenizi kaydetmediyseniz veya salvium.vault yedek dosyası dışa aktarmadıysanız fonlarınıza erişiminizi kaybedeceksiniz.",
+    "resetConfirmButton": "Cüzdanı Sıfırla",
+    "resetConfirmCheckbox": "Tohum ifadem veya yedeğim olmadan erişimi kaybedeceğimi anlıyorum"
   },
   "network": {
     "status": "Ağ Durumu",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Explorer'da Görüntüle",
     "block": "Blok",
     "date": "Tarih",
-    "type": "Tür",
+    "typeHash": "Tür / Hash",
     "amount": "Miktar",
     "status": "Durum",
     "broadcasting": "Yayınlanıyor",

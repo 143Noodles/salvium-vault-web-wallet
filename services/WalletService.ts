@@ -134,6 +134,8 @@ interface WasmWalletInstance {
   get_key_images?: () => string;
   // Mark outputs as spent by key images (for persistence after page refresh)
   mark_spent_by_key_images?: (spent_csv: string) => string;
+  // Return addresses for RETURN transaction detection
+  get_return_addresses_csv?: () => string;
 
   // Transaction scanning
   scan_tx(tx_blob_hex: string): boolean;

@@ -5,7 +5,7 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge } from './UIComponents';
-import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Key } from './Icons';
+import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Key, Trash2, AlertTriangle } from './Icons';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
@@ -18,6 +18,7 @@ interface SettingsPageProps {
    onAutoLockChange: (enabled: boolean, minutes: number) => void;
    onRescan?: () => void;
    onNavigate?: (tab: any, params?: any) => void;
+   onReset?: () => void;
 }
 
 // Need to import TabView enum or redefine for type safety if not exported easily
@@ -30,7 +31,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
    autoLockMinutes,
    onAutoLockChange,
    onRescan,
-   onNavigate
+   onNavigate,
+   onReset
 }) => {
    const { t } = useTranslation();
    const wallet = useWallet();
@@ -63,6 +65,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
    const [passwordError, setPasswordError] = useState('');
    const [isChangingPassword, setIsChangingPassword] = useState(false);
    const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
+
+   // Reset Wallet State
+   const [showResetModal, setShowResetModal] = useState(false);
+   const [resetConfirmed, setResetConfirmed] = useState(false);
 
    // Check availability
    React.useEffect(() => {
@@ -204,6 +210,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }
    };
 
+   const closeResetModal = () => {
+      setShowResetModal(false);
+      setResetConfirmed(false);
+   };
+
+   const handleResetWallet = () => {
+      if (onReset && resetConfirmed) {
+         onReset();
+         closeResetModal();
+      }
+   };
+
    // Get node info from sync status
    const nodeUrl = 'seed01.salvium.io:19081'; // Default node
    const networkHeight = wallet.syncStatus?.networkHeight || 0;
@@ -260,6 +278,46 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   {t('settings.title')}
                </h2>
                <p className="text-text-muted text-sm pl-14">{t('settings.subtitle')}</p>
+            </div>
+
+            {/* General Section */}
+            <div className="space-y-4">
+               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">{t('settings.sections.general')}</h3>
+
+               <Card className="space-y-6">
+                  <div className="flex items-center justify-between">
+                     <div className="flex gap-4">
+                        <div className="p-2.5 bg-bg-primary rounded-lg border border-white/5 h-fit text-text-secondary">
+                           <Database size={20} />
+                        </div>
+                        <div>
+                           <h4 className="text-white font-medium mb-1">{t('settings.blockchain.title')}</h4>
+                           <p className="text-sm text-text-muted">
+                              {t('settings.blockchain.syncedTo', { height: walletHeight.toLocaleString() })}
+                           </p>
+                           <p className="text-xs text-text-muted mt-1">{t('settings.blockchain.rescanHint')}</p>
+                        </div>
+                     </div>
+                     <Button
+                        variant="secondary"
+                        onClick={handleRescan}
+                        disabled={isRescanning || wallet.isScanning}
+                        className="px-4 py-2 md:px-6 md:py-2.5"
+                     >
+                        {isRescanning || wallet.isScanning ? (
+                           <>
+                              <Loader2 size={16} className="mr-2 animate-spin" />
+                              {t('settings.blockchain.scanning')}
+                           </>
+                        ) : (
+                           <>
+                              <RefreshCw size={16} className="mr-2" />
+                              {t('settings.blockchain.rescan')}
+                           </>
+                        )}
+                     </Button>
+                  </div>
+               </Card>
             </div>
 
             {/* Security Section */}
@@ -369,44 +427,27 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         {t('settings.password.update')}
                      </Button>
                   </div>
-               </Card>
-            </div>
 
-            {/* General Section */}
-            <div className="space-y-4">
-               <h3 className="text-xs uppercase font-bold text-text-secondary tracking-wider ml-1">{t('settings.sections.general')}</h3>
+                  <div className="h-[1px] bg-white/5 w-full"></div>
 
-               <Card className="space-y-6">
+                  {/* Reset Wallet */}
                   <div className="flex items-center justify-between">
                      <div className="flex gap-4">
-                        <div className="p-2.5 bg-bg-primary rounded-lg border border-white/5 h-fit text-text-secondary">
-                           <Database size={20} />
+                        <div className="p-2.5 bg-bg-primary rounded-lg border border-red-500/10 h-fit text-red-400/70">
+                           <Trash2 size={20} />
                         </div>
                         <div>
-                           <h4 className="text-white font-medium mb-1">{t('settings.blockchain.title')}</h4>
-                           <p className="text-sm text-text-muted">
-                              {t('settings.blockchain.syncedTo', { height: walletHeight.toLocaleString() })}
-                           </p>
-                           <p className="text-xs text-text-muted mt-1">{t('settings.blockchain.rescanHint')}</p>
+                           <h4 className="text-white font-medium mb-1">{t('settings.resetWallet.title')}</h4>
+                           <p className="text-sm text-text-muted">{t('settings.resetWallet.description')}</p>
                         </div>
                      </div>
                      <Button
                         variant="secondary"
-                        onClick={handleRescan}
-                        disabled={isRescanning || wallet.isScanning}
-                        className="px-4 py-2 md:px-6 md:py-2.5"
+                        onClick={() => setShowResetModal(true)}
+                        className="px-4 py-2 md:px-6 md:py-2.5 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 text-red-400"
                      >
-                        {isRescanning || wallet.isScanning ? (
-                           <>
-                              <Loader2 size={16} className="mr-2 animate-spin" />
-                              {t('settings.blockchain.scanning')}
-                           </>
-                        ) : (
-                           <>
-                              <RefreshCw size={16} className="mr-2" />
-                              {t('settings.blockchain.rescan')}
-                           </>
-                        )}
+                        <Trash2 size={16} className="mr-2" />
+                        {t('settings.resetWallet.button')}
                      </Button>
                   </div>
                </Card>
@@ -713,6 +754,62 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                      >
                         {t('common.done')}
                      </Button>
+                  </Card>
+               </div>
+            )
+         }
+
+         {/* Reset Wallet Confirmation Modal */}
+         {
+            showResetModal && (
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+                  <Card className="max-w-md w-full space-y-6 relative animate-scale-up">
+                     <button
+                        onClick={closeResetModal}
+                        className="absolute top-4 right-4 text-text-muted hover:text-white transition-colors"
+                     >
+                        <X size={20} />
+                     </button>
+
+                     <div className="text-center">
+                        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                           <AlertTriangle size={32} className="text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('lockScreen.resetConfirmTitle')}</h3>
+                        <p className="text-text-muted text-sm">{t('lockScreen.resetConfirmDescription')}</p>
+                     </div>
+
+                     <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                        <p className="text-sm text-red-400 leading-relaxed">
+                           {t('lockScreen.resetConfirmWarning')}
+                        </p>
+                     </div>
+
+                     <label className="flex items-start gap-3 cursor-pointer group">
+                        <input
+                           type="checkbox"
+                           checked={resetConfirmed}
+                           onChange={(e) => setResetConfirmed(e.target.checked)}
+                           className="mt-0.5 w-5 h-5 rounded border-white/20 bg-white/5 text-red-500 focus:ring-red-500/50 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <span className="text-sm text-text-muted group-hover:text-text-secondary transition-colors">
+                           {t('lockScreen.resetConfirmCheckbox')}
+                        </span>
+                     </label>
+
+                     <div className="flex gap-3">
+                        <Button variant="ghost" onClick={closeResetModal} className="flex-1">
+                           {t('common.cancel')}
+                        </Button>
+                        <Button
+                           onClick={handleResetWallet}
+                           disabled={!resetConfirmed}
+                           className="flex-[2] bg-red-600 hover:bg-red-500 disabled:bg-red-600/50 disabled:cursor-not-allowed"
+                        >
+                           <Trash2 size={16} className="mr-2" />
+                           {t('lockScreen.resetConfirmButton')}
+                        </Button>
+                     </div>
                   </Card>
                </div>
             )

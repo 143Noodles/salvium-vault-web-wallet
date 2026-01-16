@@ -1583,8 +1583,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 setScanProgress(progress);
                 setSyncStatus(prev => ({
                     ...prev,
-                    // Don't show height going backwards during chunk-aligned rescans
-                    walletHeight: Math.max(prev.walletHeight, currentScannedHeight),
+                    // For incremental scans, don't show height going backwards during chunk-aligned rescans
+                    // For full rescans (fromHeight === 0), show actual progress from the beginning
+                    walletHeight: isIncremental ? Math.max(prev.walletHeight, currentScannedHeight) : currentScannedHeight,
                     progress: calculatedPercentage
                 }));
             }, 150); // Update UI at most every 150ms
@@ -1682,16 +1683,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                     // Pass true to advance wallet's internal height (scan is complete)
                     walletService.setBlockchainHeight(networkHeight, true);
                     const currentBalance = walletService.getBalance();
-
-                    // DEBUG v5.47.3: Dump WASM wallet diagnostic to understand balance and spent detection gaps
-                    try {
-                        const diag = walletService.getDiagnostics();
-                        if (diag) {
-                            // Diagnostic removed
-                        }
-                    } catch (e) {
-                        console.warn('[WalletContext] Failed to get WASM diagnostic:', e);
-                    }
 
                     let cachedBalance = encryptedWallet.cachedBalance;
                     let finalBalance = currentBalance;
@@ -1850,13 +1841,41 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                         finalBalance = currentBalance;
                     }
 
+                    // MEMPOOL DOUBLE-COUNT FIX: Subtract mempool-scanned incoming amounts
+                    // When scan_tx is called for mempool transactions, WASM adds those outputs to its state.
+                    // But those same outputs are also scanned from the blockchain, causing double-counting.
+                    // Solution: subtract mempool amounts from balance (they'll be added back when confirmed).
+                    const mempoolIncomingTxs = mempoolTransactionsRef.current.filter(tx => tx.type === 'in' && tx.amount > 0);
+                    if (mempoolIncomingTxs.length > 0) {
+                        const mempoolIncomingTotal = mempoolIncomingTxs.reduce((sum, tx) => sum + tx.amount, 0);
+                        const mempoolIncomingAtomic = Math.round(mempoolIncomingTotal * 1e8);
+
+                        // Only subtract if these txs are still unconfirmed (not in mergedTxs with height > 0)
+                        const confirmedTxids = new Set(mergedTxs.filter(tx => tx.height > 0).map(tx => tx.txid));
+                        const stillUnconfirmedMempool = mempoolIncomingTxs.filter(tx => !confirmedTxids.has(tx.txid));
+
+                        if (stillUnconfirmedMempool.length > 0) {
+                            const unconfirmedTotal = stillUnconfirmedMempool.reduce((sum, tx) => sum + tx.amount, 0);
+                            const unconfirmedAtomic = Math.round(unconfirmedTotal * 1e8);
+
+                            finalBalance = {
+                                ...finalBalance,
+                                balance: Math.max(0, finalBalance.balance - unconfirmedAtomic),
+                                unlockedBalance: Math.max(0, finalBalance.unlockedBalance - unconfirmedAtomic),
+                                balanceSAL: Math.max(0, finalBalance.balanceSAL - unconfirmedTotal),
+                                unlockedBalanceSAL: Math.max(0, finalBalance.unlockedBalanceSAL - unconfirmedTotal)
+                            };
+                        }
+                    }
+
                     // Compute stakes from MERGED transaction data (not just new txs)
                     // We moved this UP so we can include staked amounts in the final balance
                     const STAKE_LOCK_PERIOD = 21601;
                     const currentHeight = networkHeight;
                     const computedStakes: Stake[] = [];
+                    // Only OUTGOING tx_type=6 are stakes - incoming are stake change/return outputs
                     const stakeTxs = mergedTxs.filter(tx =>
-                        tx.tx_type === 6 || tx.tx_type_label?.toLowerCase() === 'stake'
+                        tx.type === 'out' && (tx.tx_type === 6 || tx.tx_type_label?.toLowerCase() === 'stake')
                     );
                     const yieldTxs = mergedTxs.filter(tx =>
                         tx.tx_type === 2 || tx.tx_type_label?.toLowerCase() === 'yield'

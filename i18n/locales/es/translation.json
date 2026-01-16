@@ -228,6 +228,11 @@
       "title": "Donar a Salvium.Tools",
       "description": "Ayuda a mantener Salvium Vault funcionando. Cada donación apoya los servidores y el desarrollo.",
       "button": "Donar Ahora"
+    },
+    "resetWallet": {
+      "title": "Reiniciar Billetera",
+      "description": "Eliminar datos de billetera y comenzar de nuevo. Asegúrate de tener tu frase semilla guardada.",
+      "button": "Reiniciar"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Desbloqueando...",
     "biometricUnlock": "Desbloquear con Biometría",
     "biometricFailed": "Error biométrico: ¿Cambió la contraseña?",
-    "resetWallet": "Reiniciar Billetera (Cerrar Sesión)"
+    "resetWallet": "Reiniciar Billetera (Cerrar Sesión)",
+    "resetConfirmTitle": "¿Reiniciar Billetera?",
+    "resetConfirmDescription": "Esto eliminará permanentemente los datos de tu billetera de este dispositivo.",
+    "resetConfirmWarning": "Perderás acceso a tus fondos a menos que hayas guardado tu frase semilla de 25 palabras o exportado un archivo de respaldo salvium.vault.",
+    "resetConfirmButton": "Reiniciar Billetera",
+    "resetConfirmCheckbox": "Entiendo que perderé acceso sin mi frase semilla o respaldo"
   },
   "network": {
     "status": "Estado de Red",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Ver en Explorador",
     "block": "Bloque",
     "date": "Fecha",
-    "type": "Tipo",
+    "typeHash": "Tipo / Hash",
     "amount": "Cantidad",
     "status": "Estado",
     "broadcasting": "Transmitiendo",

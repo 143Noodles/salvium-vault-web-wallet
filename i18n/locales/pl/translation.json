@@ -228,6 +228,11 @@
       "title": "Wspomóż Salvium.Tools",
       "description": "Pomóż utrzymać Salvium Vault w działaniu. Każda darowizna wspiera serwery i rozwój.",
       "button": "Wspomóż Teraz"
+    },
+    "resetWallet": {
+      "title": "Resetuj Portfel",
+      "description": "Usuń dane portfela i zacznij od nowa. Upewnij się, że zapisałeś frazę seed.",
+      "button": "Resetuj"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Odblokowywanie...",
     "biometricUnlock": "Odblokuj Biometrią",
     "biometricFailed": "Odblokowanie biometryczne nie powiodło się: Hasło zmienione?",
-    "resetWallet": "Resetuj Portfel (Wyloguj)"
+    "resetWallet": "Resetuj Portfel (Wyloguj)",
+    "resetConfirmTitle": "Zresetować Portfel?",
+    "resetConfirmDescription": "To trwale usunie dane portfela z tego urządzenia.",
+    "resetConfirmWarning": "Stracisz dostęp do swoich środków, jeśli nie zapisałeś 25-słowowej frazy seed lub nie wyeksportowałeś pliku kopii zapasowej salvium.vault.",
+    "resetConfirmButton": "Resetuj Portfel",
+    "resetConfirmCheckbox": "Rozumiem, że bez frazy seed lub kopii zapasowej stracę dostęp"
   },
   "network": {
     "status": "Status Sieci",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Zobacz w Eksploratorze",
     "block": "Blok",
     "date": "Data",
-    "type": "Typ",
+    "typeHash": "Typ / Hash",
     "amount": "Kwota",
     "status": "Status",
     "broadcasting": "Nadawanie",

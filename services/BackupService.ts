@@ -58,6 +58,7 @@ export interface BackupData {
         autoLockMinutes: number;
     };
     walletCacheCompressed?: string;
+    returnOutputMap?: Record<string, any>;
 }
 
 async function compressString(data: string): Promise<string> {
@@ -119,6 +120,19 @@ export async function generateBackup(password: string): Promise<Blob> {
         autoLockMinutes: 15
     };
 
+    let returnOutputMap: Record<string, any> | undefined;
+    if (wallet.address) {
+        const returnMapKey = `salvium_return_output_map_${wallet.address}`;
+        const returnMapJson = localStorage.getItem(returnMapKey);
+        if (returnMapJson) {
+            try {
+                returnOutputMap = JSON.parse(returnMapJson);
+            } catch (e) {
+                console.warn('[BackupService] Failed to parse return_output_map:', e);
+            }
+        }
+    }
+
     const backupData: BackupData = {
         version: BACKUP_VERSION,
         timestamp: Date.now(),
@@ -126,7 +140,8 @@ export async function generateBackup(password: string): Promise<Blob> {
         walletCacheHex,
         walletCacheCompressed,
         contacts,
-        settings
+        settings,
+        returnOutputMap
     };
 
     const backupJson = JSON.stringify(backupData);
@@ -231,6 +246,15 @@ export async function restoreFromBackup(backupData: BackupData): Promise<void> {
 
     if (backupData.settings) {
         localStorage.setItem('salvium_settings', JSON.stringify(backupData.settings));
+    }
+
+    if (backupData.returnOutputMap && backupData.wallet?.address) {
+        const returnMapKey = `salvium_return_output_map_${backupData.wallet.address}`;
+        try {
+            localStorage.setItem(returnMapKey, JSON.stringify(backupData.returnOutputMap));
+        } catch (e) {
+            console.warn('[BackupService] Failed to restore return_output_map:', e);
+        }
     }
 }
 

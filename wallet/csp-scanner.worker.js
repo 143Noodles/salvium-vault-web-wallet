@@ -91,13 +91,15 @@ self.onmessage = async function (e) {
             // NOTE: We intentionally keep this minimal to avoid re-init overhead.
             keyImagesCsv = msg.keyImagesCsv || '';
             subaddressMapCsv = msg.subaddressMapCsv || subaddressMapCsv || '';
+            returnAddressesCsv = msg.returnAddressesCsv || returnAddressesCsv || '';
             stakeReturnHeightsStr = msg.stakeReturnHeightsStr || stakeReturnHeightsStr || '';
             self.postMessage({
                 type: 'UPDATE_KEYS_DONE',
                 workerId,
                 requestId: msg.requestId || null,
                 hasKeyImages: !!(keyImagesCsv && keyImagesCsv.length >= 64),
-                hasOwnershipCheck: !!(subaddressMapCsv && subaddressMapCsv.length > 0)
+                hasOwnershipCheck: !!(subaddressMapCsv && subaddressMapCsv.length > 0),
+                hasReturnAddresses: !!(returnAddressesCsv && returnAddressesCsv.length >= 64)
             });
             break;
 
@@ -336,14 +338,14 @@ async function handleScanCsp(msg) {
         if (subaddressMapCsv && keyImagesCsv && typeof Module.scan_csp_with_ownership_and_spent === 'function') {
             try {
                 const r1 = Module.scan_csp_with_ownership_and_spent(
-                    ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                    ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
                 );
                 mergeResult(r1);
             } catch (e) { console.error('Ownership scan failed:', e); }
         } else if (subaddressMapCsv && typeof Module.scan_csp_with_ownership === 'function') {
             try {
                 const r1 = Module.scan_csp_with_ownership(
-                    ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                    ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
                 );
                 mergeResult(r1);
             } catch (e) { console.error('Ownership scan failed:', e); }
@@ -477,20 +479,16 @@ async function handleScanCspDirect(msg) {
         // Scan using pointer arithmetic (the fast part!)
         const scanCallStart = performance.now();
 
-        // v5.1.0: Use ownership verification if subaddress map is available
-        // v5.1.2: If key images are available, also detect spent outputs (OUT tx discovery)
         let resultJson;
         if (subaddressMapCsv && keyImagesCsv && typeof Module.scan_csp_with_ownership_and_spent === 'function') {
             resultJson = Module.scan_csp_with_ownership_and_spent(
-                ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
             );
         } else if (subaddressMapCsv && typeof Module.scan_csp_with_ownership === 'function') {
-            // v5.1.0: Use ownership verification - reduces matches by 89%
             resultJson = Module.scan_csp_with_ownership(
-                ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
             );
         } else if (stakeReturnHeightsStr && typeof Module.scan_csp_batch_with_stake_filter === 'function') {
-            // v11.0: Pass returnAddressesCsv for direct stake return matching
             resultJson = Module.scan_csp_batch_with_stake_filter(
                 ptr, cspBuffer.byteLength, viewSecretKey, kViewIncoming || '', keyImagesCsv || '', sViewBalance || '', stakeReturnHeightsStr, publicSpendKey || '', returnAddressesCsv || ''
             );
@@ -691,21 +689,16 @@ async function handleScanCspBatch(msg) {
 
             Module.HEAPU8.set(cspData, ptr);
 
-            // OPTIMIZATION v3.5.12: Only log slow scans, not every chunk
-            // v5.1.0: Use ownership verification if subaddress map is available
-            // v5.1.2: If key images are available, also detect spent outputs (OUT tx discovery)
             let resultJson;
             if (subaddressMapCsv && keyImagesCsv && typeof Module.scan_csp_with_ownership_and_spent === 'function') {
                 resultJson = Module.scan_csp_with_ownership_and_spent(
-                    ptr, cspLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                    ptr, cspLength, viewSecretKey, kViewIncoming || '', keyImagesCsv, sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
                 );
             } else if (subaddressMapCsv && typeof Module.scan_csp_with_ownership === 'function') {
-                // v5.1.0: Use ownership verification - reduces matches by 89%
                 resultJson = Module.scan_csp_with_ownership(
-                    ptr, cspLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || ''
+                    ptr, cspLength, viewSecretKey, kViewIncoming || '', sViewBalance || '', subaddressMapCsv, stakeReturnHeightsStr || '', returnAddressesCsv || ''
                 );
             } else if (stakeReturnHeightsStr && typeof Module.scan_csp_batch_with_stake_filter === 'function') {
-                // v11.0: Pass returnAddressesCsv for direct stake return matching
                 resultJson = Module.scan_csp_batch_with_stake_filter(
                     ptr, cspLength, viewSecretKey, kViewIncoming || '', keyImagesCsv || '', sViewBalance || '', stakeReturnHeightsStr, publicSpendKey || '', returnAddressesCsv || ''
                 );

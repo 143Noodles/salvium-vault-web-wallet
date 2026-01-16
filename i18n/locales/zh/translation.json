@@ -228,6 +228,11 @@
       "title": "捐赠给Salvium.Tools",
       "description": "帮助保持Salvium Vault运行。每一笔捐款都支持服务器和开发。",
       "button": "立即捐赠"
+    },
+    "resetWallet": {
+      "title": "重置钱包",
+      "description": "删除钱包数据并重新开始。请确保您已保存助记词。",
+      "button": "重置"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "正在解锁...",
     "biometricUnlock": "生物识别解锁",
     "biometricFailed": "生物识别解锁失败：密码已更改？",
-    "resetWallet": "重置钱包（退出登录）"
+    "resetWallet": "重置钱包（退出登录）",
+    "resetConfirmTitle": "重置钱包？",
+    "resetConfirmDescription": "这将永久删除此设备上的钱包数据。",
+    "resetConfirmWarning": "除非您已保存25词助记词或导出了salvium.vault备份文件，否则您将无法访问您的资金。",
+    "resetConfirmButton": "重置钱包",
+    "resetConfirmCheckbox": "我理解没有助记词或备份我将无法访问"
   },
   "network": {
     "status": "网络状态",

@@ -228,6 +228,11 @@
       "title": "Doneer aan Salvium.Tools",
       "description": "Help Salvium Vault draaiende te houden. Elke donatie ondersteunt servers en ontwikkeling.",
       "button": "Nu Doneren"
+    },
+    "resetWallet": {
+      "title": "Wallet Resetten",
+      "description": "Verwijder wallet gegevens en begin opnieuw. Zorg dat je je seed phrase hebt opgeslagen.",
+      "button": "Resetten"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Ontgrendelen...",
     "biometricUnlock": "Ontgrendelen met Biometrie",
     "biometricFailed": "Biometrische ontgrendeling mislukt: Wachtwoord gewijzigd?",
-    "resetWallet": "Wallet Resetten (Uitloggen)"
+    "resetWallet": "Wallet Resetten (Uitloggen)",
+    "resetConfirmTitle": "Wallet Resetten?",
+    "resetConfirmDescription": "Dit zal je wallet gegevens permanent van dit apparaat verwijderen.",
+    "resetConfirmWarning": "Je verliest toegang tot je fondsen tenzij je je 25-woorden seed phrase hebt opgeslagen of een salvium.vault back-upbestand hebt geëxporteerd.",
+    "resetConfirmButton": "Wallet Resetten",
+    "resetConfirmCheckbox": "Ik begrijp dat ik zonder mijn seed phrase of back-up geen toegang meer heb"
   },
   "network": {
     "status": "Netwerk Status",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Bekijken in Explorer",
     "block": "Blok",
     "date": "Datum",
-    "type": "Type",
+    "typeHash": "Type / Hash",
     "amount": "Bedrag",
     "status": "Status",
     "broadcasting": "Uitzenden",

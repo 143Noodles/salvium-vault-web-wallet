@@ -228,6 +228,11 @@
       "title": "An Salvium.Tools Spenden",
       "description": "Hilf dabei, Salvium Vault am Laufen zu halten. Jede Spende unterstützt Server und Entwicklung.",
       "button": "Jetzt Spenden"
+    },
+    "resetWallet": {
+      "title": "Wallet Zurücksetzen",
+      "description": "Wallet-Daten löschen und neu beginnen. Stellen Sie sicher, dass Sie Ihre Seed-Phrase gespeichert haben.",
+      "button": "Zurücksetzen"
     }
   },
   "onboarding": {
@@ -324,7 +329,12 @@
     "unlocking": "Entsperren...",
     "biometricUnlock": "Mit Biometrie Entsperren",
     "biometricFailed": "Biometrische Entsperrung fehlgeschlagen: Passwort geändert?",
-    "resetWallet": "Wallet Zurücksetzen (Abmelden)"
+    "resetWallet": "Wallet Zurücksetzen (Abmelden)",
+    "resetConfirmTitle": "Wallet Zurücksetzen?",
+    "resetConfirmDescription": "Dies wird Ihre Wallet-Daten dauerhaft von diesem Gerät löschen.",
+    "resetConfirmWarning": "Sie verlieren den Zugriff auf Ihre Mittel, wenn Sie Ihre 25-Wort-Seed-Phrase nicht gespeichert oder eine salvium.vault-Backup-Datei exportiert haben.",
+    "resetConfirmButton": "Wallet Zurücksetzen",
+    "resetConfirmCheckbox": "Ich verstehe, dass ich ohne meine Seed-Phrase oder Backup den Zugriff verliere"
   },
   "network": {
     "status": "Netzwerkstatus",
@@ -360,7 +370,7 @@
     "viewOnExplorer": "Im Explorer Anzeigen",
     "block": "Block",
     "date": "Datum",
-    "type": "Typ",
+    "typeHash": "Typ / Hash",
     "amount": "Betrag",
     "status": "Status",
     "broadcasting": "Übertragung",

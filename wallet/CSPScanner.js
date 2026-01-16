@@ -47,6 +47,9 @@ class CSPScanner {
         // Subaddress map for ownership verification
         this.subaddressMapCsv = options.subaddressMapCsv || '';
 
+        // Return addresses for RETURN transaction detection
+        this.returnAddressesCsv = options.returnAddressesCsv || '';
+
         // BATCH MODE: Fetch multiple chunks per request to reduce network round-trips
         // Default: 20 chunks (20,000 blocks) per batch request for fewer network round-trips
         this.batchSize = options.batchSize || 20;
@@ -690,6 +693,7 @@ class CSPScanner {
                         apiBaseUrl: this.apiBaseUrl,
                         stakeReturnHeights: this.stakeReturnHeights,
                         subaddressMapCsv: this.subaddressMapCsv,
+                        returnAddressesCsv: this.returnAddressesCsv,
                         debug: this.DEBUG
                     });
                 } else if (msg.type === 'INIT_DONE') {
@@ -768,7 +772,7 @@ class CSPScanner {
      * Hot-update scanning keys in all workers (used for Phase 1b spent discovery).
      * This avoids reloading WASM and lets us re-scan once key images exist.
      */
-    async updateKeys({ keyImagesCsv, subaddressMapCsv, stakeReturnHeightsStr } = {}) {
+    async updateKeys({ keyImagesCsv, subaddressMapCsv, returnAddressesCsv, stakeReturnHeightsStr } = {}) {
         const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
         if (typeof keyImagesCsv === 'string') {
@@ -776,6 +780,9 @@ class CSPScanner {
         }
         if (typeof subaddressMapCsv === 'string') {
             this.subaddressMapCsv = subaddressMapCsv;
+        }
+        if (typeof returnAddressesCsv === 'string') {
+            this.returnAddressesCsv = returnAddressesCsv;
         }
         if (typeof stakeReturnHeightsStr === 'string') {
             // Optional: allow refreshing stake filter string too
@@ -799,12 +806,17 @@ class CSPScanner {
                     requestId,
                     keyImagesCsv: this.keyImagesCsv,
                     subaddressMapCsv: this.subaddressMapCsv,
+                    returnAddressesCsv: this.returnAddressesCsv,
                     stakeReturnHeightsStr: this.stakeReturnHeightsStr || ''
                 });
             });
         });
 
         return Promise.all(updates);
+    }
+
+    async updateReturnAddresses(returnAddressesCsv) {
+        return this.updateKeys({ returnAddressesCsv });
     }
 
     /**
