@@ -7,11 +7,10 @@ import { formatSAL } from '../utils/format';
 import { WalletTransaction } from '../services/WalletService';
 
 const ITEMS_PER_PAGE = 50;
-// Unlock confirmations by transaction type:
-// - Mining/Protocol transactions (mining, yield, stake returns): 60 blocks
-// - Regular transfers: 10 blocks
-const STANDARD_UNLOCK_CONFIRMATIONS = 10;
-const MINING_UNLOCK_CONFIRMATIONS = 60;
+
+// Unlock confirmations matching Salvium protocol
+const STANDARD_UNLOCK_CONFIRMATIONS = 10;  // Regular transfers
+const MINING_UNLOCK_CONFIRMATIONS = 60;    // Mining/yield/stake returns
 
 interface TransactionListProps {
   onExport?: () => void;
@@ -26,10 +25,7 @@ const getTxLockStatus = (tx: WalletTransaction, currentHeight: number): {
   blocksToUnlock: number;
   confirmations: number;
 } => {
-  // Determine required confirmations based on transaction type
-  // INCOMING mining/yield/stake-return transactions require 60 blocks (protocol outputs)
-  // OUTGOING stake transactions and regular transfers require 10 blocks
-  //   (change outputs from stakes are regular transfers, not protocol outputs)
+  // Protocol outputs (mining/yield/stake) need 61 confs, regular transfers need 11
   const label = tx.tx_type_label?.toLowerCase() || '';
   const isIncomingProtocol = tx.type === 'in' && (label === 'mining' || label === 'yield' || label === 'stake');
   const requiredConfirmations = isIncomingProtocol
@@ -68,8 +64,8 @@ const getTxLockStatus = (tx: WalletTransaction, currentHeight: number): {
 const TransactionList: React.FC<TransactionListProps> = ({ onExport, compact = false, transactions: propTransactions, onTxClick }) => {
   const { t, i18n } = useTranslation();
   const wallet = useWallet();
-  const transactions = propTransactions || wallet.transactions; // Use prop or wallet default
-  const currentHeight = wallet.syncStatus.walletHeight || 0;
+  const transactions = propTransactions || wallet.transactions;
+  const currentHeight = wallet.syncStatus.daemonHeight || 0;
   const [currentPage, setCurrentPage] = useState(1);
 
   // Calculate pagination

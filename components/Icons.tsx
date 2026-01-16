@@ -57,7 +57,8 @@ import {
   Camera,
   Zap,
   Heart,
-  Globe
+  Globe,
+  BrushCleaning
 } from 'lucide-react';
 
 export {
@@ -118,5 +119,6 @@ export {
   Camera,
   Zap,
   Heart,
-  Globe
+  Globe,
+  BrushCleaning
 };

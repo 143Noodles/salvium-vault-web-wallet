@@ -2895,6 +2895,17 @@ export class WalletService {
   }
 
   /**
+   * Force reconnect block stream (useful after page visibility change)
+   */
+  reconnectBlockStream(): void {
+    if (this.newBlockCallbacks.length > 0) {
+      this.disconnectBlockStream();
+      this.reconnectAttempts = 0;
+      this.connectBlockStream();
+    }
+  }
+
+  /**
    * Debug: Get input candidates diagnostic info
    * Call from console: walletService.debugInputCandidates()
    */

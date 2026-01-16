@@ -320,9 +320,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     // Pending outgoing transactions (shown until confirmed on-chain)
     const [pendingTransactions, setPendingTransactions] = useState<WalletTransaction[]>([]);
+    const pendingTransactionsRef = React.useRef<WalletTransaction[]>([]);
 
     // Mempool transactions (real-time from SSE stream)
     const [mempoolTransactions, setMempoolTransactions] = useState<WalletTransaction[]>([]);
+    const mempoolTransactionsRef = React.useRef<WalletTransaction[]>([]);
 
     // Stakes (parsed from stake-type transactions)
     const [stakes, setStakes] = useState<Stake[]>([]);
@@ -1555,11 +1557,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             // Incremental scans use smaller batches and yields to keep UI smooth.
             const isIncremental = fromHeight === undefined && walletHeight > 0;
 
-            // FIX: For incremental scans, start from walletHeight + 1 to avoid re-scanning
-            // the last processed block. The scan range is [start, end] inclusive, so without
-            // this fix, block N would be scanned twice: once in scan ending at N, and again
-            // in the next scan starting from N.
-            const scanStartHeight = isIncremental ? walletHeight + 1 : walletHeight;
+            // Align incremental scans to chunk boundary (CSPScanner fetches 1000-block chunks)
+            const CHUNK_SIZE = 1000;
+            const scanStartHeight = isIncremental
+                ? Math.floor(walletHeight / CHUNK_SIZE) * CHUNK_SIZE
+                : walletHeight;
 
             // Skip scan if we're already at the network height
             if (scanStartHeight > networkHeight) {
@@ -1578,7 +1580,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 setScanProgress(progress);
                 setSyncStatus(prev => ({
                     ...prev,
-                    walletHeight: currentScannedHeight,
+                    // Don't show height going backwards during chunk-aligned rescans
+                    walletHeight: Math.max(prev.walletHeight, currentScannedHeight),
                     progress: calculatedPercentage
                 }));
             }, 150); // Update UI at most every 150ms
@@ -2591,6 +2594,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         startScanRef.current = startScan;
     });
 
+    // Keep refs in sync for event handlers
+    useEffect(() => { pendingTransactionsRef.current = pendingTransactions; }, [pendingTransactions]);
+    useEffect(() => { mempoolTransactionsRef.current = mempoolTransactions; }, [mempoolTransactions]);
+
     // Real-time mempool stream subscription (SSE)
     // Detects incoming transactions instantly for instant UI updates
     useEffect(() => {
@@ -2611,20 +2618,23 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                 // If amount > 0, WASM found outputs belonging to this wallet
                 const txInfo = walletService.getMempoolTxInfo(event.tx_blob);
 
-                // Filter: only process if WASM found outputs for us (amount > 0)
-                if (txInfo.error || !txInfo.amount || txInfo.amount <= 0) {
-                    return; // Not ours
+                // Check if this is our pending TX (outgoing TXs have amount=0)
+                const isPendingTx = pendingTransactionsRef.current.some(ptx => ptx.txid === event.tx_hash);
+
+                // Filter: must have outputs for us OR be our pending TX
+                if (!isPendingTx && (txInfo.error || !txInfo.amount || txInfo.amount <= 0)) {
+                    return;
                 }
 
                 // Create a temporary transaction object
                 const mempoolTx: WalletTransaction = {
                     txid: event.tx_hash,
-                    amount: txInfo.amount / 100000000,
+                    amount: txInfo.amount ? txInfo.amount / 100000000 : 0,
                     timestamp: event.receive_time ? event.receive_time * 1000 : Date.now(),
                     height: 0, // Unconfirmed
-                    type: txInfo.is_incoming ? 'in' : 'out',
+                    type: isPendingTx ? 'out' : (txInfo.is_incoming ? 'in' : 'out'),
                     tx_type: 0,
-                    tx_type_label: txInfo.is_incoming ? 'Receiving' : 'Sending',
+                    tx_type_label: isPendingTx ? 'Broadcasting' : (txInfo.is_incoming ? 'Receiving' : 'Sending'),
                     pending: true,
                     fee: txInfo.fee !== undefined ? txInfo.fee / 100000000 : ((event.fee || 0) / 100000000),
                     confirmations: 0,
@@ -2637,30 +2647,38 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
                     return [mempoolTx, ...prev];
                 });
             } else if (event.type === 'mempool_remove') {
-                // Transaction confirmed or dropped from mempool
-                // DON'T remove it immediately - keep showing it until the confirmed version
-                // appears in the transactions list. The merge logic in allTransactions will
-                // automatically prefer the confirmed version when it's found.
-                // This prevents the tx from "disappearing" between mempool removal and scan completion.
+                // TX confirmed - mark as "Confirming" until scan picks it up
+                const isPendingTx = pendingTransactionsRef.current.some(ptx => ptx.txid === event.tx_hash);
+                const isTrackedMempool = mempoolTransactionsRef.current.some(mtx => mtx.txid === event.tx_hash);
 
-                // Mark the mempool tx as "confirming" so UI can update the label
-                setMempoolTransactions(prev => prev.map(t =>
-                    t.txid === event.tx_hash
-                        ? { ...t, tx_type_label: t.type === 'in' ? 'Confirming' : 'Confirming' }
-                        : t
-                ));
+                if (isTrackedMempool) {
+                    setMempoolTransactions(prev => prev.map(t =>
+                        t.txid === event.tx_hash
+                            ? { ...t, tx_type_label: 'Confirming' }
+                            : t
+                    ));
+                }
 
-                // Trigger a scan to pick up the confirmed transaction
-                // Wait a bit for block propagation
-                setTimeout(() => {
-                    if (!scanInProgressRef.current) {
-                        startScanRef.current?.();
-                    } else {
-                        setTimeout(() => {
-                            if (!scanInProgressRef.current) startScanRef.current?.();
-                        }, 5000);
-                    }
-                }, 1000);
+                if (isPendingTx) {
+                    setPendingTransactions(prev => prev.map(t =>
+                        t.txid === event.tx_hash
+                            ? { ...t, tx_type_label: 'Confirming' }
+                            : t
+                    ));
+                }
+
+                // Trigger scan to pick up confirmed TX
+                if (isTrackedMempool || isPendingTx) {
+                    setTimeout(() => {
+                        if (!scanInProgressRef.current) {
+                            startScanRef.current?.();
+                        } else {
+                            setTimeout(() => {
+                                if (!scanInProgressRef.current) startScanRef.current?.();
+                            }, 5000);
+                        }
+                    }, 1000);
+                }
             }
         };
 
@@ -2669,20 +2687,51 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         return () => {
             unsubscribe();
         };
-    }, [isWalletReady]); // Removed startScan - use ref instead to avoid reconnection churn
+    }, [isWalletReady]);
 
-    // Handle page visibility changes - reconnect streams when page becomes visible
-    // This ensures we catch up on missed events after screen off or tab switch
+    // Reconnect streams and scan when page becomes visible
     useEffect(() => {
-        const handleVisibilityChange = () => {
+        const handleVisibilityChange = async () => {
             if (!document.hidden && isWalletReady) {
                 walletService.reconnectMempoolStream();
-                // Block stream reconnects automatically on error
+                walletService.reconnectBlockStream();
+
+                // Catch up on any blocks missed while backgrounded
+                setTimeout(async () => {
+                    try {
+                        const networkHeight = await cspScanService.getNetworkHeight();
+                        const syncStatus = walletService.getSyncStatus();
+                        const walletHeight = syncStatus.walletHeight || 0;
+
+                        // If we're behind, trigger a scan
+                        if (networkHeight > walletHeight && !scanInProgressRef.current) {
+                            console.log(`[WalletContext] Page visible - behind by ${networkHeight - walletHeight} blocks, triggering scan`);
+                            startScanRef.current?.();
+                        }
+                    } catch (e) {
+                        // Ignore errors on visibility change
+                    }
+                }, 500);
             }
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isWalletReady]);
+
+    // Reconnect streams when network comes back online (mobile WiFi/cellular switch)
+    useEffect(() => {
+        const handleOnline = async () => {
+            if (!isWalletReady) return;
+            walletService.reconnectMempoolStream();
+            walletService.reconnectBlockStream();
+            setTimeout(() => {
+                if (!scanInProgressRef.current) startScanRef.current?.();
+            }, 500);
+        };
+
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
     }, [isWalletReady]);
 
     // Fallback polling

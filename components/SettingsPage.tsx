@@ -5,7 +5,7 @@ import { isMobile, isTablet, isIPad13 } from 'react-device-detect';
 const isTabletDevice = isTablet || isIPad13;
 const isMobileOrTablet = isMobile || isTabletDevice; // Tablets use mobile layouts
 import { Card, Button, Input, Badge } from './UIComponents';
-import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Send } from './Icons';
+import { Settings, Lock, Shield, Monitor, Bell, Network, Database, RefreshCw, Loader2, Download, Eye, EyeOff, X, ScanFace, Heart, ExternalLink, CheckCircle2, Globe, Send, BrushCleaning } from './Icons';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import { useWallet } from '../services/WalletContext';
@@ -449,7 +449,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   <div className="flex items-center justify-between">
                      <div className="flex gap-4">
                         <div className="p-2.5 bg-bg-primary rounded-lg border border-white/5 h-fit text-text-secondary">
-                           <Send size={20} />
+                           <BrushCleaning size={20} />
                         </div>
                         <div>
                            <h4 className="text-white font-medium mb-1">Sweep All</h4>
@@ -464,7 +464,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         onClick={() => setShowSweepModal(true)}
                         disabled={isSweeping}
                      >
-                        <Send size={14} className="mr-1" />
+                        <BrushCleaning size={14} className="mr-1" />
                         Sweep
                      </Button>
                   </div>
@@ -791,7 +791,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                      <div className="text-center">
                         <div className="w-12 h-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary mx-auto mb-4">
-                           <Send size={24} />
+                           <BrushCleaning size={24} />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">Sweep All Funds</h3>
                         <p className="text-text-muted text-sm">
@@ -846,7 +846,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                               </>
                            ) : (
                               <>
-                                 <Send size={16} className="mr-2" />
+                                 <BrushCleaning size={16} className="mr-2" />
                                  Sweep All
                               </>
                            )}

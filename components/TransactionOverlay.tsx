@@ -30,12 +30,12 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
         return wallet.transactions.find(tx => tx.txid === txId) || null;
     }, [txId, wallet.transactions]);
 
-    // Calculate confirmations dynamically from current network height
+    // Confirmations = chain_height - tx_height
     const confirmations = useMemo(() => {
         if (!transaction || !transaction.height || transaction.height === 0) return 0;
         const networkHeight = wallet.syncStatus?.daemonHeight || 0;
         if (networkHeight === 0) return transaction.confirmations || 0;
-        return Math.max(0, networkHeight - transaction.height + 1);
+        return Math.max(0, networkHeight - transaction.height);
     }, [transaction, wallet.syncStatus?.daemonHeight]);
 
     if (!isOpen || !txId) return null;
@@ -73,8 +73,7 @@ const TransactionOverlay: React.FC<TransactionOverlayProps> = ({ isOpen, onClose
         }
     };
 
-    // Determine if this is an incoming transfer that can be returned
-    // Must be an incoming transfer with sufficient confirmations
+    // Incoming transfers can be returned after 10 confirmations
     const canReturn = transaction?.type === 'in' &&
         (transaction?.tx_type_label?.toLowerCase() === 'transfer' || transaction?.tx_type === 3) &&
         confirmations >= 10;
